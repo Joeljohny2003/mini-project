@@ -1,0 +1,163 @@
+{% extends 'marketplace/base.html' %}
+
+{% block content %}
+
+<div class="container py-5">
+
+    <div class="mb-5">
+        <h1 class="fw-bold">Seller Dashboard</h1>
+        <p class="text-muted">
+            Manage your products and listings.
+        </p>
+    </div>
+
+    <!-- Statistics -->
+
+    <div class="row g-4 mb-5">
+
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 p-4">
+                <h6 class="text-muted">Total Listings</h6>
+                <h2 class="fw-bold">
+                    {{ total_listings }}
+                </h2>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 p-4">
+                <h6 class="text-muted">Active Listings</h6>
+                <h2 class="fw-bold text-success">
+                    {{ active_listings }}
+                </h2>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card shadow-sm border-0 p-4">
+                <h6 class="text-muted">Sold Listings</h6>
+                <h2 class="fw-bold text-primary">
+                    {{ sold_listings }}
+                </h2>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Actions -->
+
+    <div class="mb-4">
+
+        <a href="{% url 'sell_item' %}"
+           class="btn btn-primary">
+            + List New Item
+        </a>
+
+        <a href="{% url 'my_listings' %}"
+           class="btn btn-outline-dark">
+            My Listings
+        </a>
+
+    </div>
+
+    <!-- Products -->
+
+    <h3 class="fw-bold mb-4">
+        Your Products
+    </h3>
+
+    <div class="row g-4">
+
+        {% for product in products %}
+
+        <div class="col-md-6 col-lg-4">
+
+            <div class="card h-100 shadow-sm">
+
+                {% if product.image %}
+
+                <img src="{{ product.image.url }}"
+                     class="card-img-top"
+                     style="height:220px; object-fit:cover;"
+                     alt="{{ product.name }}">
+
+                {% else %}
+
+                <div class="bg-light d-flex align-items-center justify-content-center"
+                     style="height:220px;">
+                    <span class="text-muted">
+                        No Image
+                    </span>
+                </div>
+
+                {% endif %}
+
+                <div class="card-body">
+
+                    <h5 class="fw-bold">
+                        {{ product.name }}
+                    </h5>
+
+                    <h5 class="text-primary">
+                        ₹{{ product.price }}
+                    </h5>
+
+                    {% if product.available %}
+
+                        <span class="badge bg-success">
+                            Active
+                        </span>
+
+                    {% else %}
+
+                        <span class="badge bg-secondary">
+                            Sold
+                        </span>
+
+                    {% endif %}
+
+                    <p class="text-muted mt-2 mb-3">
+                        📍 {{ product.location }}
+                    </p>
+
+                    <a href="{% url 'product_details' product.id %}"
+                       class="btn btn-dark btn-sm">
+                        View Product
+                    </a>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        {% empty %}
+
+        <div class="col-12">
+
+            <div class="text-center py-5">
+
+                <h4>
+                    You haven't listed anything yet.
+                </h4>
+
+                <p class="text-muted">
+                    Start selling your pre-owned items.
+                </p>
+
+                <a href="{% url 'sell_item' %}"
+                   class="btn btn-primary">
+                    List Your First Item
+                </a>
+
+            </div>
+
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+</div>
+
+{% endblock %}

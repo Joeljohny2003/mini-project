@@ -1,0 +1,84 @@
+{% extends 'marketplace/base.html' %}
+
+{% block content %}
+
+<div class="container py-5">
+
+    <div class="row">
+
+        <!-- Product Image -->
+        <div class="col-md-6">
+
+            {% if product.image %}
+                <img src="{{ product.image.url }}"
+                     class="img-fluid rounded"
+                     alt="{{ product.name }}">
+            {% else %}
+                <div class="border rounded p-5 text-center">
+                    <h4>No Image Available</h4>
+                </div>
+            {% endif %}
+
+        </div>
+
+
+        <!-- Product Information -->
+        <div class="col-md-6">
+
+            <h1>{{ product.name }}</h1>
+
+            <h2 class="text-primary">
+                ₹{{ product.price }}
+            </h2>
+
+            <hr>
+
+            <p>
+                <strong>Category:</strong>
+                {{ product.category }}
+            </p>
+
+            <p>
+                <strong>Condition:</strong>
+                {{ product.condition }}
+            </p>
+
+            <p>
+                <strong>Location:</strong>
+                {{ product.location }}
+            </p>
+
+            <p>
+                <strong>Description:</strong>
+                {{ product.description }}
+            </p>
+
+            {% if product.available %}
+                <p class="text-success">
+                    ✓ Available
+                </p>
+            {% else %}
+                <p class="text-danger">
+                    ✗ Sold / Unavailable
+                </p>
+            {% endif %}
+
+           <a href="{% url 'add_to_cart' product.id %}"
+              class="btn btn-primary">
+              🛒 Add to Cart
+            </a>
+
+            
+
+            <a href="{% url 'products' %}"
+               class="btn btn-outline-secondary">
+                Back to Products
+            </a>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

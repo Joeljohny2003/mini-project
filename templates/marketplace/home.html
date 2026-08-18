@@ -1,0 +1,618 @@
+{% extends 'marketplace/base.html' %}
+{% load static %}
+
+{% block content %}
+
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, #111827, #312e81);
+        color: white;
+        border-radius: 24px;
+        padding: 70px 50px;
+        margin: 30px 0 50px;
+    }
+
+   .hero-section h1 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 52px;
+    font-weight: 400;
+    line-height: 1.12;
+    color: #ffffff;
+    letter-spacing: -1px;
+   }
+
+    .hero-section p {
+        font-size: 18px;
+        color: #d1d5db;
+        max-width: 600px;
+        margin: 20px 0 30px;
+    }
+
+    .hero-buttons a {
+        margin-right: 10px;
+    }
+
+    .section-title {
+        font-weight: 800;
+        margin-bottom: 25px;
+    }
+
+    .category-card {
+        background: white;
+        border-radius: 16px;
+        padding: 25px 15px;
+        text-align: center;
+        border: 1px solid #e5e7eb;
+        transition: 0.25s;
+        height: 100%;
+    }
+
+    .category-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+    }
+
+    .category-icon {
+        width: 60px;
+        height: 60px;
+        margin: auto;
+        border-radius: 50%;
+        background: #eef2ff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        margin-bottom: 15px;
+    }
+
+    .product-card {
+        border: 1px solid #e5e7eb;
+        border-radius: 18px;
+        overflow: hidden;
+        background: white;
+        height: 100%;
+        transition: 0.25s;
+    }
+
+    .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 30px rgba(0,0,0,0.10);
+    }
+
+    .product-image {
+        height: 220px;
+        width: 100%;
+        object-fit: cover;
+        background: #f3f4f6;
+    }
+
+    .product-info {
+        padding: 18px;
+    }
+
+    .condition-badge {
+        display: inline-block;
+        background: #dcfce7;
+        color: #166534;
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .product-price {
+        color: #4f46e5;
+        font-size: 21px;
+        font-weight: 800;
+    }
+
+    .location-text {
+        color: #6b7280;
+        font-size: 14px;
+    }
+
+    .sell-section {
+        background: #f5f3ff;
+        border-radius: 22px;
+        padding: 50px;
+        margin: 60px 0;
+    }
+
+    .step-card {
+        padding: 25px;
+        text-align: center;
+    }
+
+    .step-number {
+        width: 55px;
+        height: 55px;
+        border-radius: 50%;
+        background: #4f46e5;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 15px;
+        font-weight: bold;
+        font-size: 20px;
+    }
+
+    .empty-products {
+        background: #f9fafb;
+        padding: 50px;
+        border-radius: 18px;
+        text-align: center;
+    }
+
+    @media(max-width: 768px) {
+        .hero-section {
+            padding: 45px 25px;
+        }
+
+        .hero-section h1 {
+            font-size: 36px;
+        }
+
+        .sell-section {
+            padding: 30px 20px;
+        }
+    }
+
+    .hero-image-card {
+    position: relative;
+    height: 390px;
+    border-radius: 24px;
+    overflow: hidden;
+    background: #ffffff;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+    }
+
+   .hero-image-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+   }
+
+   .hero-floating-card {
+    position: absolute;
+    left: 20px;
+    right: 20px;
+    bottom: 20px;
+
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: 15px 18px;
+
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(10px);
+
+    border-radius: 14px;
+    color: #111827;
+   }
+
+   .hero-floating-card > span {
+    width: 42px;
+    height: 42px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 50%;
+    background: #dcfce7;
+    color: #15803d;
+    font-size: 22px;
+   }
+
+   .hero-floating-card strong {
+    display: block;
+    font-size: 14px;
+   }
+ 
+   .hero-floating-card small {
+    display: block;
+    color: #6b7280;
+    margin-top: 2px;
+}
+</style>
+
+
+<div class="container">
+
+    <!-- HERO -->
+    <section class="hero-section">
+
+        <div class="row align-items-center">
+
+            <div class="col-lg-7">
+
+                <span class="badge bg-light text-dark mb-3">
+                    ♻️ Sustainable Shopping
+                </span>
+
+                <h1>
+                    Buy Pre-Owned.<br>
+                    Sell Smart.<br>
+                    Save More.
+                </h1>
+
+                <p>
+                    Discover quality second-hand products at affordable prices.
+                    Have something you don't use anymore? Sell it and give it
+                    a second life.
+                </p>
+
+                <div class="hero-buttons">
+
+                    <a href="{% url 'products' %}"
+                       class="btn btn-light btn-lg">
+                        🛍️ Shop Now
+                    </a>
+
+                    <a href="{% url 'sell_item' %}"
+                       class="btn btn-outline-light btn-lg">
+                        💰 Sell an Item
+                    </a>
+
+                </div>
+
+            </div>
+
+            <div class="col-lg-5 d-none d-lg-block">
+
+    <div class="hero-image-card">
+
+        <img
+            src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=900&q=85&auto=format&fit=crop"
+            alt="Pre-owned products"
+        >
+
+        <div class="hero-floating-card">
+            <span>♻</span>
+            <div>
+                <strong>Give it a second life</strong>
+                <small>Buy • Sell • Reuse</small>
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+        </div>
+
+    </section>
+
+
+    <!-- CATEGORIES -->
+
+    <section class="mb-5">
+
+        <div class="d-flex justify-content-between align-items-center">
+
+            <h2 class="section-title">
+                Shop by Category
+            </h2>
+
+            <a href="{% url 'products' %}">
+                View all →
+            </a>
+
+        </div>
+
+        <div class="row g-4">
+
+            {% for category in categories %}
+
+            <div class="col-6 col-md-4 col-lg-2">
+
+                <a href="{% url 'products' %}"
+                   style="text-decoration:none; color:inherit;">
+
+                    <div class="category-card">
+
+                        <div class="category-icon">
+                            🛍️
+                        </div>
+
+                        <h6 class="fw-bold">
+                            {{ category.name }}
+                        </h6>
+
+                    </div>
+
+                </a>
+
+            </div>
+
+            {% empty %}
+
+            <div class="col-12">
+
+                <p class="text-muted">
+                    No categories available yet.
+                </p>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+    </section>
+
+
+    <!-- FRESHLY LISTED PRODUCTS -->
+
+    <section class="mb-5">
+
+        <div class="d-flex justify-content-between align-items-center">
+
+            <div>
+                <h2 class="section-title mb-1">
+                    Freshly Listed
+                </h2>
+
+                <p class="text-muted">
+                    Recently added products from our sellers.
+                </p>
+            </div>
+
+            <a href="{% url 'products' %}">
+                View all →
+            </a>
+
+        </div>
+
+
+        <div class="row g-4">
+
+            {% for product in featured_products %}
+
+            <div class="col-md-6 col-lg-3">
+
+                <div class="product-card">
+
+                    {% if product.image %}
+
+                        <img src="{{ product.image.url }}"
+                             class="product-image"
+                             alt="{{ product.name }}">
+
+                    {% else %}
+
+                        <div class="product-image d-flex
+                                    align-items-center justify-content-center">
+
+                            <span class="text-muted">
+                                No Image
+                            </span>
+
+                        </div>
+
+                    {% endif %}
+
+
+                    <div class="product-info">
+
+                        <div class="mb-2">
+
+                            <span class="condition-badge">
+                                {{ product.condition }}
+                            </span>
+
+                        </div>
+
+
+                        <h5 class="fw-bold">
+                            {{ product.name }}
+                        </h5>
+
+
+                        <div class="product-price mb-2">
+                            ₹{{ product.price }}
+                        </div>
+
+
+                        <div class="location-text mb-3">
+                            📍 {{ product.location }}
+                        </div>
+
+
+                        <a href="{% url 'product_details' product.id %}"
+                           class="btn btn-dark w-100">
+
+                            View Product →
+
+                        </a>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            {% empty %}
+
+            <div class="col-12">
+
+                <div class="empty-products">
+
+                    <h3>
+                        🛍️ No products yet
+                    </h3>
+
+                    <p class="text-muted">
+                        Be the first person to list something!
+                    </p>
+
+                    <a href="{% url 'sell_item' %}"
+                       class="btn btn-primary">
+
+                        Sell an Item
+
+                    </a>
+
+                </div>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+    </section>
+
+
+    <!-- SELL SECTION -->
+
+    <section class="sell-section">
+
+        <div class="row align-items-center">
+
+            <div class="col-md-8">
+
+                <span class="text-primary fw-bold">
+                    HAVE SOMETHING TO SELL?
+                </span>
+
+                <h2 class="fw-bold mt-2">
+                    Turn unused items into extra money.
+                </h2>
+
+                <p class="text-muted">
+                    List your pre-owned products and connect with buyers
+                    looking for great deals.
+                </p>
+
+            </div>
+
+            <div class="col-md-4 text-md-end">
+
+                <a href="{% url 'sell_item' %}"
+                   class="btn btn-primary btn-lg">
+
+                    + List an Item
+
+                </a>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- HOW IT WORKS -->
+
+    <section class="mb-5">
+
+        <div class="text-center mb-5">
+
+            <h2 class="section-title">
+                How Thrift Store Works
+            </h2>
+
+            <p class="text-muted">
+                Buying and selling second-hand products made simple.
+            </p>
+
+        </div>
+
+
+        <div class="row">
+
+            <div class="col-md-4">
+
+                <div class="step-card">
+
+                    <div class="step-number">
+                        1
+                    </div>
+
+                    <h4>
+                        🔎 Browse
+                    </h4>
+
+                    <p class="text-muted">
+                        Find products you love from sellers around you.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-md-4">
+
+                <div class="step-card">
+
+                    <div class="step-number">
+                        2
+                    </div>
+
+                    <h4>
+                        🛒 Buy
+                    </h4>
+
+                    <p class="text-muted">
+                        Add items to your cart and complete your order.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-md-4">
+
+                <div class="step-card">
+
+                    <div class="step-number">
+                        3
+                    </div>
+
+                    <h4>
+                        📦 Receive
+                    </h4>
+
+                    <p class="text-muted">
+                        Track your order until it reaches your doorstep.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- SELLER CTA -->
+
+    <section class="text-center py-5 mb-5">
+
+        <h2 class="fw-bold">
+            Ready to clear out your closet?
+        </h2>
+
+        <p class="text-muted">
+            Someone else might be looking for exactly what you no longer need.
+        </p>
+
+        <a href="{% url 'sell_item' %}"
+           class="btn btn-primary btn-lg">
+
+            Start Selling →
+
+        </a>
+
+    </section>
+
+</div>
+
+{% endblock %}

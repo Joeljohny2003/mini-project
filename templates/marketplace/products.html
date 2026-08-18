@@ -1,0 +1,109 @@
+{% extends 'marketplace/base.html' %}
+
+{% block content %}
+
+<section class="container py-5">
+
+    <div class="text-center mb-5">
+        <h1>Browse Products</h1>
+        <p>Discover quality second-hand products at affordable prices.</p>
+    </div>
+
+    <!-- Search / filter summary -->
+    {% if query or selected_category %}
+        <p class="text-center text-muted mb-4">
+            {% if query %}Showing results for “{{ query }}”{% endif %}
+            {% if query and selected_category %} in {% endif %}
+            {% if selected_category %}
+                {% for category in categories %}
+                    {% if category.id|stringformat:"s" == selected_category %}{{ category.name }}{% endif %}
+                {% endfor %}
+            {% endif %}
+            &middot;
+            <a href="{% url 'products' %}">Clear filters</a>
+        </p>
+    {% endif %}
+
+    <!-- Categories -->
+    <div class="d-flex flex-wrap gap-2 justify-content-center mb-5">
+        <a href="{% url 'products' %}{% if query %}?q={{ query }}{% endif %}"
+           class="btn btn-sm {% if not selected_category %}btn-primary{% else %}btn-outline-primary{% endif %}">
+            All
+        </a>
+
+        {% for category in categories %}
+        <a href="?category={{ category.id }}{% if query %}&q={{ query }}{% endif %}"
+           class="btn btn-sm {% if selected_category == category.id|stringformat:'s' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+            {{ category.name }}
+        </a>
+        {% endfor %}
+    </div>
+
+    <!-- Products -->
+    <div class="row g-4">
+
+    {% for product in products %}
+
+    <div class="col-md-4">
+        <div class="card h-100 shadow-sm">
+
+            {% if product.image %}
+                <img src="{{ product.image.url }}"
+                     class="card-img-top"
+                     style="height:220px; object-fit:cover;"
+                     alt="{{ product.name }}">
+            {% else %}
+                <div class="bg-light d-flex align-items-center justify-content-center" style="height:220px;">
+                    <span class="text-muted">No Image</span>
+                </div>
+            {% endif %}
+
+            <div class="card-body d-flex flex-column">
+
+                <h5>{{ product.name }}</h5>
+
+                <p class="text-muted flex-grow-1">{{ product.description|truncatewords:18 }}</p>
+
+                <p class="mb-1">
+                    <strong>Condition:</strong>
+                    {{ product.condition }}
+                </p>
+
+                <p class="mb-2">
+                    <strong>Location:</strong>
+                    {{ product.location }}
+                </p>
+
+                <h5 class="text-primary">₹{{ product.price }}</h5>
+
+                <a href="{% url 'product_details' product.id %}" class="btn btn-primary mt-2">
+                    View Details
+                </a>
+
+            </div>
+
+        </div>
+    </div>
+
+    {% empty %}
+
+    <div class="col-12">
+        <div class="text-center py-5">
+            {% if query or selected_category %}
+                <h4>No products match your search.</h4>
+                <p class="text-muted">Try a different keyword or clear the filters above.</p>
+            {% else %}
+                <h4>No products available yet.</h4>
+                <p class="text-muted">Be the first to list something!</p>
+                <a href="{% url 'sell_item' %}" class="btn btn-primary">Sell an Item</a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% endfor %}
+
+    </div>
+
+</section>
+
+{% endblock %}

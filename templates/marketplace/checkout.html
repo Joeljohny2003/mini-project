@@ -1,0 +1,353 @@
+{% extends 'marketplace/base.html' %}
+
+{% block content %}
+
+<style>
+    .checkout-page {
+        background: #f7f8fa;
+        min-height: 75vh;
+        padding: 50px 20px;
+    }
+
+    .checkout-container {
+        max-width: 1100px;
+        margin: auto;
+    }
+
+    .checkout-title {
+        font-size: 34px;
+        font-weight: 700;
+        margin-bottom: 30px;
+        color: #111827;
+    }
+
+    .checkout-layout {
+        display: grid;
+        grid-template-columns: 1fr 350px;
+        gap: 25px;
+    }
+
+    .checkout-box {
+        background: white;
+        padding: 30px;
+        border-radius: 14px;
+        box-shadow: 0 8px 25px rgba(0,0,0,.06);
+    }
+
+    .box-title {
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 25px;
+        color: #111827;
+    }
+
+    .form-group {
+        margin-bottom: 18px;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 7px;
+        color: #374151;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid #d1d5db;
+        border-radius: 7px;
+        font-size: 15px;
+        box-sizing: border-box;
+    }
+
+    textarea.form-control {
+        resize: vertical;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #4f46e5;
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+    }
+
+    .delivery-box {
+        margin-top: 25px;
+        padding: 18px;
+        background: #f8fafc;
+        border-radius: 10px;
+    }
+
+    .summary-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 12px 0;
+        border-bottom: 1px solid #e5e7eb;
+        gap: 15px;
+    }
+
+    .summary-item:last-child {
+        border-bottom: none;
+    }
+
+    .summary-name {
+        color: #374151;
+    }
+
+    .summary-price {
+        font-weight: 600;
+    }
+
+    .total-row {
+        border-top: 2px solid #e5e7eb;
+        margin-top: 15px;
+        padding-top: 18px;
+        display: flex;
+        justify-content: space-between;
+        font-size: 21px;
+        font-weight: 700;
+    }
+
+    .place-order {
+        width: 100%;
+        margin-top: 25px;
+        padding: 15px;
+        border: none;
+        border-radius: 7px;
+        background: #16a34a;
+        color: white;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .place-order:hover {
+        background: #15803d;
+    }
+
+    .back-cart {
+        display: inline-block;
+        margin-top: 15px;
+        color: #4f46e5;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .error {
+        color: #dc2626;
+        font-size: 13px;
+        margin-top: 5px;
+    }
+
+    @media (max-width: 768px) {
+        .checkout-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .form-row {
+            grid-template-columns: 1fr;
+        }
+
+        .checkout-title {
+            font-size: 28px;
+        }
+    }
+</style>
+
+
+<div class="checkout-page">
+
+    <div class="checkout-container">
+
+        <h1 class="checkout-title">
+            Checkout 🚚
+        </h1>
+
+        <div class="checkout-layout">
+
+            <!-- DELIVERY DETAILS -->
+
+            <div class="checkout-box">
+
+                <div class="box-title">
+                    📍 Delivery Details
+                </div>
+
+                <form method="POST">
+
+                    {% csrf_token %}
+
+                    <div class="form-group">
+                        <label for="{{ form.full_name.id_for_label }}">
+                            Full Name
+                        </label>
+
+                        {{ form.full_name }}
+
+                        {% for error in form.full_name.errors %}
+                            <div class="error">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+
+                    <div class="form-group">
+                        <label for="{{ form.phone.id_for_label }}">
+                            Phone Number
+                        </label>
+
+                        {{ form.phone }}
+
+                        {% for error in form.phone.errors %}
+                            <div class="error">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+
+                    <div class="form-group">
+                        <label for="{{ form.address.id_for_label }}">
+                            Delivery Address
+                        </label>
+
+                        {{ form.address }}
+
+                        {% for error in form.address.errors %}
+                            <div class="error">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+
+                    <div class="form-row">
+
+                        <div class="form-group">
+                            <label for="{{ form.city.id_for_label }}">
+                                City
+                            </label>
+
+                            {{ form.city }}
+
+                            {% for error in form.city.errors %}
+                                <div class="error">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+
+                        <div class="form-group">
+                            <label for="{{ form.state.id_for_label }}">
+                                State
+                            </label>
+
+                            {{ form.state }}
+
+                            {% for error in form.state.errors %}
+                                <div class="error">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                    </div>
+
+
+                    <div class="form-group">
+
+                        <label for="{{ form.pincode.id_for_label }}">
+                            PIN Code
+                        </label>
+
+                        {{ form.pincode }}
+
+                        {% for error in form.pincode.errors %}
+                            <div class="error">{{ error }}</div>
+                        {% endfor %}
+
+                    </div>
+
+
+                    <div class="delivery-box">
+
+                        <div class="form-group">
+
+                            <label for="{{ form.delivery_method.id_for_label }}">
+                                🚚 Delivery Method
+                            </label>
+
+                            {{ form.delivery_method }}
+
+                        </div>
+
+                        <div class="form-group">
+
+                            <label for="{{ form.payment_method.id_for_label }}">
+                                💳 Payment Method
+                            </label>
+
+                            {{ form.payment_method }}
+                         
+                        </div>    
+
+                    </div>
+
+                    
+
+
+                    <button type="submit" class="place-order">
+                        Place Order →
+                    </button>
+
+                    <a href="{% url 'cart' %}" class="back-cart">
+                        ← Back to Cart
+                    </a>
+
+                </form>
+
+            </div>
+
+
+            <!-- ORDER SUMMARY -->
+
+            <div class="checkout-box">
+
+                <div class="box-title">
+                    Order Summary
+                </div>
+
+                {% for item in cart_items %}
+
+                <div class="summary-item">
+
+                    <span class="summary-name">
+                        {{ item.product.name }}
+                        × {{ item.quantity }}
+                    </span>
+
+                    <span class="summary-price">
+                        ₹{{ item.total_price }}
+                    </span>
+
+                </div>
+
+                {% endfor %}
+
+
+                <div class="total-row">
+
+                    <span>Total</span>
+
+                    <span>
+                        ₹{{ total }}
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

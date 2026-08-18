@@ -1,0 +1,259 @@
+{% extends 'marketplace/base.html' %}
+
+{% block content %}
+
+<style>
+    .register-page {
+        min-height: calc(100vh - 100px);
+        background: #f7f8fa;
+        padding: 60px 20px;
+    }
+
+    .register-card {
+        max-width: 680px;
+        margin: 0 auto;
+        background: #ffffff;
+        padding: 45px 50px;
+        border-radius: 14px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    }
+
+    .register-icon {
+        width: 70px;
+        height: 70px;
+        margin: 0 auto 20px;
+        border-radius: 50%;
+        background: #effaf3;
+        border: 2px solid #16a34a;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+    }
+
+    .register-title {
+        text-align: center;
+        font-size: 34px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: #111827;
+    }
+
+    .register-subtitle {
+        text-align: center;
+        color: #64748b;
+        font-size: 17px;
+        margin-bottom: 35px;
+    }
+
+    .register-form p {
+        margin-bottom: 22px;
+    }
+
+    .register-form label {
+        display: block;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 8px;
+    }
+
+    .register-form input {
+        width: 100%;
+        height: 54px;
+        padding: 12px 16px;
+        border: 1px solid #d5dce5;
+        border-radius: 7px;
+        font-size: 16px;
+        outline: none;
+        box-sizing: border-box;
+        transition: 0.2s;
+    }
+
+    .register-form input:focus {
+        border-color: #16a34a;
+        box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+    }
+
+    .helptext {
+        display: block;
+        color: #64748b;
+        font-size: 14px;
+        margin-top: 8px;
+        line-height: 1.5;
+    }
+
+    .password-requirements {
+        background: #f0faf4;
+        border: 1px solid #d3efdc;
+        border-radius: 7px;
+        padding: 15px 18px;
+        margin-top: -8px;
+        margin-bottom: 22px;
+        color: #334155;
+        font-size: 14px;
+        line-height: 1.8;
+    }
+
+    .password-requirements div::before {
+        content: "✓";
+        color: #16a34a;
+        font-weight: bold;
+        margin-right: 9px;
+    }
+
+    .register-button {
+        width: 100%;
+        height: 54px;
+        border: none;
+        border-radius: 7px;
+        background: #16a34a;
+        color: white;
+        font-size: 17px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+
+    .register-button:hover {
+        background: #15803d;
+    }
+
+    .login-divider {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin: 30px 0 20px;
+        color: #64748b;
+    }
+
+    .login-divider::before,
+    .login-divider::after {
+        content: "";
+        height: 1px;
+        background: #d9dee5;
+        flex: 1;
+    }
+
+    .login-link {
+        text-align: center;
+        color: #64748b;
+        font-size: 16px;
+    }
+
+    .login-link a {
+        color: #16a34a;
+        font-weight: 600;
+        text-decoration: underline;
+    }
+
+    .error-message {
+        background: #fff1f2;
+        border: 1px solid #fecdd3;
+        color: #be123c;
+        padding: 12px 15px;
+        border-radius: 7px;
+        margin-bottom: 20px;
+    }
+
+    @media (max-width: 768px) {
+        .register-page {
+            padding: 30px 15px;
+        }
+
+        .register-card {
+            padding: 30px 22px;
+        }
+
+        .register-title {
+            font-size: 28px;
+        }
+    }
+</style>
+
+
+<div class="register-page">
+
+    <div class="register-card">
+
+        <div class="register-icon">
+            👤
+        </div>
+
+        <h1 class="register-title">
+            Create Your Account
+        </h1>
+
+        <p class="register-subtitle">
+            Join Thrift Store and start buying & selling.
+        </p>
+
+
+        {% if form.errors %}
+            <div class="error-message">
+                Please correct the errors below and try again.
+            </div>
+        {% endif %}
+
+
+        <form method="POST" class="register-form">
+
+            {% csrf_token %}
+
+            {{ form.username.label_tag }}
+            {{ form.username }}
+
+            {% if form.username.help_text %}
+                <span class="helptext">
+                    {{ form.username.help_text }}
+                </span>
+            {% endif %}
+
+            {% for error in form.username.errors %}
+                <div class="error-message">
+                    {{ error }}
+                </div>
+            {% endfor %}
+
+
+            {{ form.password1.label_tag }}
+            {{ form.password1 }}
+
+            <div class="password-requirements">
+                <div>Your password must contain at least 8 characters.</div>
+                <div>Your password can't be too similar to your other personal information.</div>
+                <div>Your password can't be a commonly used password.</div>
+                <div>Your password can't be entirely numeric.</div>
+            </div>
+
+
+            {{ form.password2.label_tag }}
+            {{ form.password2 }}
+
+            {% for error in form.password2.errors %}
+                <div class="error-message">
+                    {{ error }}
+                </div>
+            {% endfor %}
+
+
+            <button type="submit" class="register-button">
+                Register
+            </button>
+
+        </form>
+
+
+        <div class="login-divider">
+            <span>OR</span>
+        </div>
+
+        <div class="login-link">
+            Already have an account?
+            <a href="{% url 'login' %}">Login</a>
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

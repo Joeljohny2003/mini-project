@@ -1,0 +1,108 @@
+{% extends 'marketplace/base.html' %}
+
+{% block content %}
+
+<div class="container py-5">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+
+        <h1>My Listings</h1>
+
+        <a href="{% url 'sell_item' %}" class="btn btn-primary">
+            + Sell an Item
+        </a>
+
+    </div>
+
+
+    {% if products %}
+
+        <div class="row">
+
+            {% for product in products %}
+
+            <div class="col-md-4 mb-4">
+
+                <div class="card h-100 shadow-sm">
+
+                    {% if product.image %}
+
+                        <img src="{{ product.image.url }}"
+                             class="card-img-top"
+                             style="height:220px; object-fit:cover;"
+                             alt="{{ product.name }}">
+
+                    {% else %}
+
+                        <div class="text-center p-5 bg-light">
+                            <h5>No Image</h5>
+                        </div>
+
+                    {% endif %}
+
+
+                    <div class="card-body">
+
+                        <h5 class="card-title">
+                            {{ product.name }}
+                        </h5>
+
+                        <h5 class="text-primary">
+                            ₹{{ product.price }}
+                        </h5>
+
+                        <p class="mb-1">
+                            <strong>Condition:</strong>
+                            {{ product.condition }}
+                        </p>
+
+                        <p class="mb-1">
+                            <strong>Location:</strong>
+                            {{ product.location }}
+                        </p>
+
+                        {% if product.available %}
+
+                            <p class="text-success">
+                                ● Available
+                            </p>
+
+                        {% else %}
+
+                            <p class="text-danger">
+                                ● Sold / Unavailable
+                            </p>
+
+                        {% endif %}
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+
+        <div class="text-center py-5">
+
+            <h3>You haven't listed anything yet.</h3>
+
+            <p class="text-muted">
+                Sell your unused items and earn money.
+            </p>
+
+            <a href="{% url 'sell_item' %}" class="btn btn-primary">
+                Sell Your First Item
+            </a>
+
+        </div>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

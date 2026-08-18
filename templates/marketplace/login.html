@@ -1,0 +1,219 @@
+{% extends 'marketplace/base.html' %}
+
+{% block content %}
+
+<style>
+    .login-page {
+        min-height: calc(100vh - 100px);
+        background: #f7f8fa;
+        padding: 70px 20px;
+    }
+
+    .login-card {
+        max-width: 500px;
+        margin: 0 auto;
+        background: #ffffff;
+        padding: 45px 50px;
+        border-radius: 14px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    }
+
+    .login-icon {
+        width: 70px;
+        height: 70px;
+        margin: 0 auto 20px;
+        border-radius: 50%;
+        background: #effaf3;
+        border: 2px solid #16a34a;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+    }
+
+    .login-title {
+        text-align: center;
+        font-size: 34px;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 8px;
+    }
+
+    .login-subtitle {
+        text-align: center;
+        color: #64748b;
+        font-size: 17px;
+        margin-bottom: 35px;
+    }
+
+    .login-form label {
+        display: block;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 8px;
+    }
+
+    .login-form input {
+        width: 100%;
+        height: 54px;
+        padding: 12px 16px;
+        border: 1px solid #d5dce5;
+        border-radius: 7px;
+        font-size: 16px;
+        box-sizing: border-box;
+        outline: none;
+        margin-bottom: 22px;
+    }
+
+    .login-form input:focus {
+        border-color: #16a34a;
+        box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+    }
+
+    .login-button {
+        width: 100%;
+        height: 54px;
+        border: none;
+        border-radius: 7px;
+        background: #16a34a;
+        color: white;
+        font-size: 17px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .login-button:hover {
+        background: #15803d;
+    }
+
+    .login-error {
+        background: #fff1f2;
+        border: 1px solid #fecdd3;
+        color: #be123c;
+        padding: 12px 15px;
+        border-radius: 7px;
+        margin-bottom: 20px;
+    }
+
+    .register-divider {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin: 30px 0 20px;
+        color: #64748b;
+    }
+
+    .register-divider::before,
+    .register-divider::after {
+        content: "";
+        height: 1px;
+        background: #d9dee5;
+        flex: 1;
+    }
+
+    .register-link {
+        text-align: center;
+        color: #64748b;
+        font-size: 16px;
+    }
+
+    .register-link a {
+        color: #16a34a;
+        font-weight: 600;
+        text-decoration: underline;
+    }
+
+    @media (max-width: 768px) {
+        .login-page {
+            padding: 35px 15px;
+        }
+
+        .login-card {
+            padding: 30px 22px;
+        }
+
+        .login-title {
+            font-size: 28px;
+        }
+    }
+</style>
+
+
+<div class="login-page">
+
+    <div class="login-card">
+
+        <div class="login-icon">
+            👤
+        </div>
+
+        <h1 class="login-title">
+            Welcome Back
+        </h1>
+
+        <p class="login-subtitle">
+            Login to continue shopping and selling.
+        </p>
+
+
+        {% if error %}
+            <div class="login-error">
+                {{ error }}
+            </div>
+        {% endif %}
+
+
+        <form method="POST" class="login-form">
+
+            {% csrf_token %}
+
+            <label for="username">
+                Username
+            </label>
+
+            <input
+                type="text"
+                id="username"
+                name="username"
+                placeholder="Enter your username"
+                required
+            >
+
+
+            <label for="password">
+                Password
+            </label>
+
+            <input
+                type="password"
+                id="password"
+                name="password"
+                placeholder="Enter your password"
+                required
+            >
+
+
+            <button type="submit" class="login-button">
+                Login
+            </button>
+
+        </form>
+
+
+        <div class="register-divider">
+            <span>OR</span>
+        </div>
+
+
+        <div class="register-link">
+            Don't have an account?
+            <a href="{% url 'register' %}">
+                Create an account
+            </a>
+        </div>
+
+    </div>
+
+</div>
+
+{% endblock %}

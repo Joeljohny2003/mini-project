@@ -1,0 +1,282 @@
+{% extends 'marketplace/base.html' %}
+
+{% block content %}
+
+<style>
+    .cart-page {
+        background: #f7f8fa;
+        min-height: 70vh;
+        padding: 60px 20px;
+    }
+
+    .cart-container {
+        max-width: 1100px;
+        margin: auto;
+    }
+
+    .cart-title {
+        font-size: 34px;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 30px;
+    }
+
+    .cart-layout {
+        display: grid;
+        grid-template-columns: 1fr 330px;
+        gap: 25px;
+    }
+
+    .cart-items,
+    .cart-summary {
+        background: #fff;
+        border-radius: 14px;
+        padding: 25px;
+        box-shadow: 0 8px 25px rgba(0,0,0,.06);
+    }
+
+    .cart-item {
+        display: flex;
+        gap: 20px;
+        padding: 20px 0;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .cart-item:last-child {
+        border-bottom: none;
+    }
+
+    .cart-image {
+        width: 110px;
+        height: 110px;
+        border-radius: 10px;
+        object-fit: cover;
+        background: #f1f5f9;
+    }
+
+    .cart-info {
+        flex: 1;
+    }
+
+    .cart-product-name {
+        font-size: 19px;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 8px;
+    }
+
+    .cart-condition {
+        color: #64748b;
+        font-size: 14px;
+        margin-bottom: 10px;
+    }
+
+    .cart-price {
+        font-weight: 700;
+        color: #16a34a;
+        font-size: 18px;
+    }
+
+    .quantity {
+        margin-top: 8px;
+        color: #475569;
+    }
+
+    .summary-title {
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 25px;
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 15px;
+        color: #475569;
+    }
+
+    .summary-total {
+        border-top: 1px solid #e5e7eb;
+        padding-top: 18px;
+        margin-top: 20px;
+        display: flex;
+        justify-content: space-between;
+        font-size: 21px;
+        font-weight: 700;
+        color: #111827;
+    }
+
+    .checkout-btn {
+        display: block;
+        width: 100%;
+        margin-top: 25px;
+        padding: 15px;
+        text-align: center;
+        border-radius: 7px;
+        background: #16a34a;
+        color: white;
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .checkout-btn:hover {
+        background: #15803d;
+    }
+
+    .empty-cart {
+        text-align: center;
+        padding: 60px 20px;
+    }
+
+    .empty-cart h2 {
+        font-size: 25px;
+        margin-bottom: 10px;
+    }
+
+    .empty-cart p {
+        color: #64748b;
+        margin-bottom: 25px;
+    }
+
+    .shop-btn {
+        display: inline-block;
+        padding: 13px 25px;
+        background: #16a34a;
+        color: white;
+        text-decoration: none;
+        border-radius: 7px;
+        font-weight: 600;
+    }
+
+    @media (max-width: 768px) {
+        .cart-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .cart-item {
+            flex-wrap: wrap;
+        }
+
+        .cart-title {
+            font-size: 28px;
+        }
+    }
+</style>
+
+
+<div class="cart-page">
+
+    <div class="cart-container">
+
+        <h1 class="cart-title">
+            Shopping Cart 🛒
+        </h1>
+
+        {% if cart_items %}
+
+        <div class="cart-layout">
+
+            <!-- CART ITEMS -->
+
+            <div class="cart-items">
+
+                {% for item in cart_items %}
+
+                <div class="cart-item">
+
+                    {% if item.product.image %}
+                        <img
+                            src="{{ item.product.image.url }}"
+                            class="cart-image"
+                            alt="{{ item.product.name }}"
+                        >
+                    {% else %}
+                        <div class="cart-image"></div>
+                    {% endif %}
+
+                    <div class="cart-info">
+
+                        <div class="cart-product-name">
+                            {{ item.product.name }}
+                        </div>
+
+                        <div class="cart-condition">
+                            Condition: {{ item.product.condition }}
+                        </div>
+
+                        <div class="cart-price">
+                            ₹{{ item.product.price }}
+                        </div>
+
+                        <div class="quantity">
+                            Quantity: {{ item.quantity }}
+                        </div>
+
+                        <div class="quantity">
+                            Item total:
+                            <strong>₹{{ item.total_price }}</strong>
+                        </div>
+
+                    </div>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+
+            <!-- SUMMARY -->
+
+            <div class="cart-summary">
+
+                <div class="summary-title">
+                    Order Summary
+                </div>
+
+                <div class="summary-row">
+                    <span>Items</span>
+                    <span>{{ cart_items|length }}</span>
+                </div>
+
+                <div class="summary-row">
+                    <span>Delivery</span>
+                    <span>Calculated at checkout</span>
+                </div>
+
+                <div class="summary-total">
+                    <span>Total</span>
+                    <span>₹{{ total }}</span>
+                </div>
+
+                <a href="{% url 'checkout' %}" class="checkout-btn">
+                    Proceed to Checkout →
+                </a>
+
+            </div>
+
+        </div>
+
+        {% else %}
+
+        <div class="cart-items empty-cart">
+
+            <h2>Your cart is empty</h2>
+
+            <p>
+                Looks like you haven't added anything yet.
+            </p>
+
+            <a href="{% url 'products' %}" class="shop-btn">
+                Browse Products
+            </a>
+
+        </div>
+
+        {% endif %}
+
+    </div>
+
+</div>
+
+{% endblock %}
