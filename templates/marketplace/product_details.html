@@ -2,6 +2,29 @@
 
 {% block content %}
 
+<style>
+    .chat-box {
+        margin-top: 32px;
+        padding: 20px;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        background: #f8fafc;
+    }
+    .chat-messages {
+        max-height: 260px;
+        overflow-y: auto;
+        margin-bottom: 16px;
+    }
+    .chat-message {
+        padding: 10px 12px;
+        margin-bottom: 8px;
+        border-radius: 8px;
+        background: #fff;
+    }
+    .chat-message.mine { background: #eef2ff; }
+    .chat-message small { color: #64748b; }
+</style>
+
 <div class="container py-5">
 
     <div class="row">
@@ -75,9 +98,96 @@
                 Back to Products
             </a>
 
+            {% if user.is_authenticated and product.seller and user != product.seller %}
+                <div class="chat-box">
+                    <h3 class="h5">Chat with the seller</h3>
+                    <div class="chat-messages">
+                        {% for chat_message in chat_messages %}
+                            <div class="chat-message {% if chat_message.sender == user %}mine{% endif %}">
+                                <small>{{ chat_message.sender.username }} · {{ chat_message.created_at|date:"M d, H:i" }}</small>
+                                <div>{{ chat_message.message }}</div>
+                            </div>
+                        {% empty %}
+                            <p class="text-muted mb-0">Ask about the price, condition, or delivery.</p>
+                        {% endfor %}
+                    </div>
+                    <form method="post" action="{% url 'product_chat' product.id %}">
+                        {% csrf_token %}
+                        <div class="input-group">
+                            <input type="text" name="message" class="form-control" maxlength="1000" placeholder="Ask the seller something..." required>
+                            <button type="submit" class="btn btn-primary">Send</button>
+                        </div>
+                    </form>
+                </div>
+            {% elif user.is_authenticated and product.seller and user == product.seller and chat_messages %}
+                <div class="chat-box">
+                    <h3 class="h5">Buyer messages</h3>
+                    <div class="chat-messages">
+                        {% for chat_message in chat_messages %}
+                            <div class="chat-message {% if chat_message.sender == user %}mine{% endif %}">
+                                <small>{{ chat_message.sender.username }} · {{ chat_message.created_at|date:"M d, H:i" }}</small>
+                                <div>{{ chat_message.message }}</div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <form method="post" action="{% url 'product_chat' product.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="buyer_id" value="{{ chat_messages.0.buyer_id }}">
+                        <div class="input-group">
+                            <input type="text" name="message" class="form-control" maxlength="1000" placeholder="Reply to the buyer..." required>
+                            <button type="submit" class="btn btn-primary">Reply</button>
+                        </div>
+                    </form>
+                </div>
+            {% elif not user.is_authenticated and product.seller %}
+                <div class="chat-box">
+                    <h3 class="h5">Chat with the seller</h3>
+                    <p class="text-muted mb-3">Log in to discuss the price, condition, or delivery with the seller.</p>
+                    <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-primary">Log in to chat</a>
+                </div>
+            {% endif %}
+
         </div>
 
     </div>
+
+    {% if similar_products %}
+        <section class="mt-5 pt-4 border-top" aria-labelledby="similar-products-title">
+            <div class="d-flex justify-content-between align-items-end mb-3">
+                <div>
+                    <p class="text-uppercase text-muted small fw-semibold mb-1">More to explore</p>
+                    <h2 id="similar-products-title" class="h3 mb-0">Similar products</h2>
+                </div>
+                <a href="{% url 'products' %}" class="btn btn-sm btn-outline-secondary">View all</a>
+            </div>
+
+            <div class="row g-4">
+                {% for similar_product in similar_products %}
+                    <div class="col-sm-6 col-lg-3">
+                        <article class="card h-100 shadow-sm">
+                            {% if similar_product.image %}
+                                <img src="{{ similar_product.image.url }}"
+                                     class="card-img-top"
+                                     style="height: 180px; object-fit: cover;"
+                                     alt="{{ similar_product.name }}">
+                            {% else %}
+                                <div class="bg-light d-flex align-items-center justify-content-center"
+                                     style="height: 180px;">
+                                    <span class="text-muted">No Image</span>
+                                </div>
+                            {% endif %}
+                            <div class="card-body d-flex flex-column">
+                                <h3 class="h5">{{ similar_product.name }}</h3>
+                                <p class="text-muted small flex-grow-1 mb-2">{{ similar_product.description|truncatewords:12 }}</p>
+                                <p class="text-primary fw-semibold mb-2">₹{{ similar_product.price }}</p>
+                                <a href="{% url 'product_details' similar_product.id %}" class="btn btn-primary btn-sm">View Details</a>
+                            </div>
+                        </article>
+                    </div>
+                {% endfor %}
+            </div>
+        </section>
+    {% endif %}
 
 </div>
 

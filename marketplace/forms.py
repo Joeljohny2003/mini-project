@@ -1,5 +1,6 @@
 from django import forms
-from .models import Product, Order
+from django.contrib.auth.models import User
+from .models import Product, Order, DeliveryPerson
 
 
 class ProductForm(forms.ModelForm):
@@ -9,6 +10,8 @@ class ProductForm(forms.ModelForm):
 
         fields = [
             'name',
+            'company',
+            'antiquity',
             'category',
             'description',
             'price',
@@ -25,6 +28,17 @@ class ProductForm(forms.ModelForm):
 
             'category': forms.Select(attrs={
                 'class': 'form-control'
+            }),
+
+            'company': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Enter company or brand'
+            }),
+
+            'antiquity': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Age in years',
+                'min': 0
             }),
 
             'description': forms.Textarea(attrs={
@@ -119,3 +133,30 @@ class CheckoutForm(forms.ModelForm):
                 }
             ),
         }
+
+
+class DeliveryRegistrationForm(forms.Form):
+    username = forms.CharField(max_length=150, widget=forms.TextInput(attrs={
+        'class': 'form-control',
+        'placeholder': 'Choose a username'
+    }))
+    password = forms.CharField(widget=forms.PasswordInput(attrs={
+        'class': 'form-control',
+        'placeholder': 'Create a password'
+    }))
+    password_confirm = forms.CharField(widget=forms.PasswordInput(attrs={
+        'class': 'form-control',
+        'placeholder': 'Confirm your password'
+    }))
+    phone = forms.CharField(max_length=15, widget=forms.TextInput(attrs={
+        'class': 'form-control',
+        'placeholder': 'Phone number'
+    }))
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data.get('password') != cleaned_data.get('password_confirm'):
+            raise forms.ValidationError('Passwords do not match.')
+        if User.objects.filter(username=cleaned_data.get('username')).exists():
+            raise forms.ValidationError('That username is already in use.')
+        return cleaned_data

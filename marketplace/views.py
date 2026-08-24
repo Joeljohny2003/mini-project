@@ -1,14 +1,28 @@
 from django.shortcuts import render,redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
+from django.db.models import Q
+from functools import wraps
 import razorpay
-from .models import Product, Cart, CartItem, Order, Category
+from .models import Product, Cart, CartItem, Order, OrderItem, Category, ChatMessage, DeliveryPerson
 from .forms import ProductForm
-from .forms import CheckoutForm
+from .forms import CheckoutForm, DeliveryRegistrationForm
 
 # Create your views here.
+
+
+def customer_required(view):
+    @wraps(view)
+    def wrapped(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login')
+        if DeliveryPerson.objects.filter(user=request.user, is_active=True).exists():
+            return redirect('delivery_dashboard')
+        return view(request, *args, **kwargs)
+    return wrapped
 
 def home(request):
 
@@ -33,12 +47,34 @@ def products(request):
 
     query = request.GET.get('q', '').strip()
     category_id = request.GET.get('category', '').strip()
+    company = request.GET.get('company', '').strip()
+    min_price = request.GET.get('min_price', '').strip()
+    max_price = request.GET.get('max_price', '').strip()
+    min_antiquity = request.GET.get('min_antiquity', '').strip()
+    max_antiquity = request.GET.get('max_antiquity', '').strip()
 
     if query:
         products_list = products_list.filter(name__icontains=query)
 
     if category_id:
         products_list = products_list.filter(category_id=category_id)
+
+    if company:
+        products_list = products_list.filter(
+            Q(company__icontains=company) | Q(name__icontains=company)
+        )
+
+    if min_price:
+        products_list = products_list.filter(price__gte=min_price)
+
+    if max_price:
+        products_list = products_list.filter(price__lte=max_price)
+
+    if min_antiquity:
+        products_list = products_list.filter(antiquity__gte=min_antiquity)
+
+    if max_antiquity:
+        products_list = products_list.filter(antiquity__lte=max_antiquity)
 
     return render(
         request,
@@ -48,19 +84,78 @@ def products(request):
             'categories': categories,
             'query': query,
             'selected_category': category_id,
+            'company': company,
+            'min_price': min_price,
+            'max_price': max_price,
+            'min_antiquity': min_antiquity,
+            'max_antiquity': max_antiquity,
         }
     )
 
 def product_details(request, product_id):
     product = get_object_or_404(Product, id=product_id)
+    similar_products = list(
+        Product.objects.filter(
+            available=True,
+            category=product.category,
+        ).exclude(id=product.id).order_by('-created_at')[:4]
+    )
+
+    if len(similar_products) < 4:
+        similar_ids = [similar_product.id for similar_product in similar_products]
+        similar_products.extend(
+            Product.objects.filter(available=True)
+            .exclude(id=product.id)
+            .exclude(id__in=similar_ids)
+            .order_by('-created_at')[:4 - len(similar_products)]
+        )
+
+    messages = ChatMessage.objects.none()
+    if request.user.is_authenticated and product.seller:
+        if request.user == product.seller:
+            messages = ChatMessage.objects.filter(product=product)
+        else:
+            messages = ChatMessage.objects.filter(
+                product=product,
+                buyer=request.user
+            )
 
     return render(
         request,
         'marketplace/product_details.html',
         {
-            'product': product
+            'product': product,
+            'similar_products': similar_products,
+            'chat_messages': messages,
         }
     )
+
+
+@customer_required
+def product_chat(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+
+    if not product.seller:
+        return redirect('product_details', product_id=product.id)
+
+    if request.method == 'POST':
+        message = request.POST.get('message', '').strip()
+        buyer = request.user
+        if request.user == product.seller:
+            buyer_id = request.POST.get('buyer_id', '').strip()
+            buyer = get_object_or_404(User, id=buyer_id)
+            if not ChatMessage.objects.filter(product=product, buyer=buyer).exists():
+                return redirect('product_details', product_id=product.id)
+
+        if message and buyer != product.seller:
+            ChatMessage.objects.create(
+                product=product,
+                buyer=buyer,
+                sender=request.user,
+                message=message
+            )
+
+    return redirect('product_details', product_id=product.id)
 
 def register(request):
     if request.method == 'POST':
@@ -91,14 +186,19 @@ def user_login(request):
             password=password
         )
 
-        if user is not None:
+        if user is not None and not DeliveryPerson.objects.filter(user=user).exists():
             login(request, user)
             return redirect('home')
+
+        if user is not None and DeliveryPerson.objects.filter(user=user).exists():
+            error = 'This is a delivery account. Please use Delivery sign in.'
+        else:
+            error = 'Invalid username or password.'
 
         return render(
             request,
             'marketplace/login.html',
-            {'error': 'Invalid username or password.'}
+            {'error': error}
         )
 
     return render(request, 'marketplace/login.html')
@@ -108,10 +208,98 @@ def user_logout(request):
     logout(request)
     return redirect('home')
 
+
+def delivery_register(request):
+    if request.user.is_authenticated and not DeliveryPerson.objects.filter(user=request.user).exists():
+        return redirect('home')
+
+    if request.method == 'POST':
+        form = DeliveryRegistrationForm(request.POST)
+        if form.is_valid():
+            user = User.objects.create_user(
+                username=form.cleaned_data['username'],
+                password=form.cleaned_data['password']
+            )
+            DeliveryPerson.objects.create(
+                user=user,
+                phone=form.cleaned_data['phone']
+            )
+            login(request, user)
+            return redirect('delivery_dashboard')
+    else:
+        form = DeliveryRegistrationForm()
+
+    return render(request, 'marketplace/delivery_register.html', {'form': form})
+
+
+def delivery_login(request):
+    if request.user.is_authenticated and not DeliveryPerson.objects.filter(user=request.user).exists():
+        return redirect('home')
+
+    if request.method == 'POST':
+        username = request.POST.get('username', '')
+        password = request.POST.get('password', '')
+        user = authenticate(request, username=username, password=password)
+
+        if user and DeliveryPerson.objects.filter(user=user, is_active=True).exists():
+            login(request, user)
+            return redirect('delivery_dashboard')
+
+        return render(request, 'marketplace/delivery_login.html', {
+            'error': 'Invalid delivery account details.'
+        })
+
+    return render(request, 'marketplace/delivery_login.html')
+
+
+def delivery_dashboard(request):
+    if not request.user.is_authenticated:
+        return redirect('delivery_login')
+
+    delivery_person = get_object_or_404(
+        DeliveryPerson,
+        user=request.user,
+        is_active=True
+    )
+
+    if request.method == 'POST':
+        order_id = request.POST.get('order_id')
+        action = request.POST.get('action')
+        order = get_object_or_404(Order, id=order_id)
+
+        if action == 'claim' and order.status == 'Confirmed' and not order.delivery_person:
+            order.delivery_person = delivery_person
+            order.save(update_fields=['delivery_person'])
+        elif order.delivery_person_id == delivery_person.id:
+            if action == 'pickup' and order.status == 'Confirmed':
+                order.status = 'Shipped'
+                order.save(update_fields=['status'])
+            elif action == 'deliver' and order.status == 'Shipped':
+                order.status = 'Delivered'
+                order.save(update_fields=['status'])
+
+        return redirect('delivery_dashboard')
+
+    available_orders = Order.objects.filter(
+        status='Confirmed',
+        delivery_person__isnull=True
+    ).select_related('user').order_by('created_at')
+    assigned_orders = Order.objects.filter(
+        delivery_person=delivery_person
+    ).select_related('user').order_by('-created_at')
+
+    return render(request, 'marketplace/delivery_dashboard.html', {
+        'delivery_person': delivery_person,
+        'available_orders': available_orders,
+        'assigned_orders': assigned_orders,
+    })
+
 def sell_item(request):
 
     if not request.user.is_authenticated:
         return redirect('login')
+    if DeliveryPerson.objects.filter(user=request.user, is_active=True).exists():
+        return redirect('delivery_dashboard')
 
     if request.method == 'POST':
         form = ProductForm(request.POST, request.FILES)
@@ -135,8 +323,10 @@ def add_to_cart(request, product_id):
 
     if not request.user.is_authenticated:
         return redirect('login')
+    if DeliveryPerson.objects.filter(user=request.user, is_active=True).exists():
+        return redirect('delivery_dashboard')
 
-    product = get_object_or_404(Product, id=product_id)
+    product = get_object_or_404(Product, id=product_id, available=True)
 
     cart, created = Cart.objects.get_or_create(
         user=request.user
@@ -157,12 +347,14 @@ def cart(request):
 
     if not request.user.is_authenticated:
         return redirect('login')
+    if DeliveryPerson.objects.filter(user=request.user, is_active=True).exists():
+        return redirect('delivery_dashboard')
 
     cart, created = Cart.objects.get_or_create(
         user=request.user
     )
 
-    cart_items = cart.items.select_related('product')
+    cart_items = cart.items.select_related('product').filter(product__available=True)
 
     total = sum(
         item.total_price()
@@ -183,12 +375,14 @@ def checkout(request):
 
     if not request.user.is_authenticated:
         return redirect('login')
+    if DeliveryPerson.objects.filter(user=request.user, is_active=True).exists():
+        return redirect('delivery_dashboard')
 
     cart, created = Cart.objects.get_or_create(
         user=request.user
     )
 
-    cart_items = cart.items.select_related('product')
+    cart_items = cart.items.select_related('product').filter(product__available=True)
 
     if not cart_items.exists():
         return redirect('cart')
@@ -209,12 +403,28 @@ def checkout(request):
             order.user = request.user
             order.total_amount = total
 
+            order_items = [
+                OrderItem(
+                    order=order,
+                    product=item.product,
+                    product_name=item.product.name,
+                    quantity=item.quantity,
+                    price=item.product.price,
+                )
+                for item in cart_items
+            ]
+
             # Cash on Delivery
             if order.payment_method == 'Cash on Delivery':
 
                 order.payment_status = 'Pending'
                 order.status = 'Confirmed'
                 order.save()
+                OrderItem.objects.bulk_create(order_items)
+
+                Product.objects.filter(
+                    id__in=cart_items.values('product_id')
+                ).update(available=False)
 
                 cart.items.all().delete()
 
@@ -229,6 +439,7 @@ def checkout(request):
                 order.payment_status = 'Pending'
                 order.status = 'Pending'
                 order.save()
+                OrderItem.objects.bulk_create(order_items)
 
                 client = razorpay.Client(
                     auth=(
@@ -320,6 +531,11 @@ def payment_success(request, order_id):
         cart = Cart.objects.filter(user=request.user).first()
 
         if cart:
+            Product.objects.filter(
+                id__in=cart.items.filter(
+                    product__available=True
+                ).values('product_id')
+            ).update(available=False)
             cart.items.all().delete()
 
         return redirect(
@@ -361,7 +577,7 @@ def order_success(request, order_id):
         }
     )
 
-@login_required
+@customer_required
 def my_orders(request):
     orders = Order.objects.filter(
         user=request.user
@@ -373,7 +589,7 @@ def my_orders(request):
         {'orders': orders}
     )
 
-@login_required
+@customer_required
 def my_listings(request):
 
     products = Product.objects.filter(
@@ -386,7 +602,7 @@ def my_listings(request):
         {'products': products}
     )
 
-@login_required
+@customer_required
 def seller_dashboard(request):
 
     products = Product.objects.filter(

@@ -1,0 +1,21 @@
+{% extends 'marketplace/base.html' %}
+
+{% block content %}
+<div class="container py-5" style="max-width:520px">
+    <h1 class="mb-2">Delivery Person Registration</h1>
+    <p class="text-muted mb-4">Create an account to pick up and deliver customer orders.</p>
+    {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+    <form method="post">
+        {% csrf_token %}
+        {% for field in form %}
+            <div class="mb-3">
+                {{ field.label_tag }}
+                {{ field }}
+                {% for error in field.errors %}<div class="text-danger small">{{ error }}</div>{% endfor %}
+            </div>
+        {% endfor %}
+        <button class="btn btn-primary" type="submit">Register</button>
+    </form>
+    <p class="mt-4">Already registered? <a href="{% url 'delivery_login' %}">Sign in</a></p>
+</div>
+{% endblock %}

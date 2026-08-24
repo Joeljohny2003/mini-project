@@ -15,6 +15,7 @@
   toggle && toggle.addEventListener('click', () => setDrawer(!drawer.classList.contains('is-open')));
   close  && close.addEventListener('click', () => setDrawer(false));
   drawer && drawer.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => setDrawer(false)));
+
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && drawer && drawer.classList.contains('is-open')) setDrawer(false);
   });

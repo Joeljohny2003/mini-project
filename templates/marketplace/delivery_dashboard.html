@@ -1,0 +1,65 @@
+{% extends 'marketplace/base.html' %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="mb-1">Delivery Dashboard</h1>
+            <p class="text-muted mb-0">Welcome, {{ delivery_person.user.username }}.</p>
+        </div>
+        <a href="{% url 'logout' %}" class="btn btn-outline-secondary">Log out</a>
+    </div>
+
+    <h2 class="h4 mb-3">Orders ready for pickup</h2>
+    <div class="row g-4 mb-5">
+        {% for order in available_orders %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h3 class="h5">Order #{{ order.id }}</h3>
+                        <p class="mb-1"><strong>Customer:</strong> {{ order.full_name }}</p>
+                        <p class="mb-1"><strong>Phone:</strong> {{ order.phone }}</p>
+                        <p class="mb-3"><strong>Address:</strong> {{ order.address }}, {{ order.city }}, {{ order.state }} - {{ order.pincode }}</p>
+                        <p class="text-muted">₹{{ order.total_amount }} · {{ order.created_at|date:"d M Y, H:i" }}</p>
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="order_id" value="{{ order.id }}">
+                            <button class="btn btn-primary" name="action" value="claim" type="submit">Claim delivery</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12"><p class="text-muted">No unassigned orders are ready for pickup.</p></div>
+        {% endfor %}
+    </div>
+
+    <h2 class="h4 mb-3">My deliveries</h2>
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead><tr><th>Order</th><th>Customer</th><th>Address</th><th>Status</th><th>Action</th></tr></thead>
+            <tbody>
+                {% for order in assigned_orders %}
+                    <tr>
+                        <td>#{{ order.id }}</td>
+                        <td>{{ order.full_name }}<br><small>{{ order.phone }}</small></td>
+                        <td>{{ order.address }}, {{ order.city }}<br><small>{{ order.state }} - {{ order.pincode }}</small></td>
+                        <td><span class="badge bg-secondary">{{ order.status }}</span></td>
+                        <td>
+                            {% if order.status == 'Confirmed' %}
+                                <form method="post"><input type="hidden" name="order_id" value="{{ order.id }}">{% csrf_token %}<button class="btn btn-sm btn-warning" name="action" value="pickup">Mark picked up</button></form>
+                            {% elif order.status == 'Shipped' %}
+                                <form method="post"><input type="hidden" name="order_id" value="{{ order.id }}">{% csrf_token %}<button class="btn btn-sm btn-success" name="action" value="deliver">Mark delivered</button></form>
+                            {% else %}
+                                <span class="text-muted">Complete</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="5" class="text-muted">You have no assigned deliveries.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -11,9 +11,19 @@ urlpatterns = [
         name='product_details'
     ),
 
+    path(
+        'products/<int:product_id>/chat/',
+        views.product_chat,
+        name='product_chat'
+    ),
+
     path('register/', views.register, name='register'),
     path('login/', views.user_login, name='login'),
     path('logout/', views.user_logout, name='logout'),
+
+    path('delivery/register/', views.delivery_register, name='delivery_register'),
+    path('delivery/login/', views.delivery_login, name='delivery_login'),
+    path('delivery/', views.delivery_dashboard, name='delivery_dashboard'),
 
     path('sell/', views.sell_item, name='sell_item'),
 

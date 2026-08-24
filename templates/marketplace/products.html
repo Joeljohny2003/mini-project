@@ -2,6 +2,68 @@
 
 {% block content %}
 
+<style>
+    .product-filter {
+        margin: 0 auto 36px;
+        padding: 22px;
+        max-width: 1120px;
+        background: #fff;
+        border: 1px solid var(--rule);
+        border-radius: var(--r);
+        box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+    }
+    .product-filter__head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 18px;
+    }
+    .product-filter__title {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        margin: 0;
+        color: var(--ink);
+        font-size: 16px;
+        font-weight: 700;
+    }
+    .product-filter__title svg { color: var(--indigo); }
+    .product-filter__clear {
+        color: var(--indigo);
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+    }
+    .product-filter__clear:hover { color: var(--indigo-deep); text-decoration: underline; }
+    .product-filter .form-label {
+        margin-bottom: 7px;
+        color: var(--ink-soft);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: .02em;
+    }
+    .product-filter .form-control {
+        min-height: 43px;
+        border-color: var(--rule-strong);
+        border-radius: var(--r-sm);
+        font-family: var(--ff-body);
+    }
+    .product-filter .form-control:focus {
+        border-color: var(--indigo);
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, .12);
+    }
+    .product-filter__button {
+        min-height: 43px;
+        border-radius: var(--r-sm);
+        font-weight: 700;
+    }
+    @media (max-width: 767px) {
+        .product-filter { padding: 18px; }
+        .product-filter__head { align-items: flex-start; }
+    }
+</style>
+
 <section class="container py-5">
 
     <div class="text-center mb-5">
@@ -10,7 +72,7 @@
     </div>
 
     <!-- Search / filter summary -->
-    {% if query or selected_category %}
+    {% if query or selected_category or company or min_price or max_price or min_antiquity or max_antiquity %}
         <p class="text-center text-muted mb-4">
             {% if query %}Showing results for “{{ query }}”{% endif %}
             {% if query and selected_category %} in {% endif %}
@@ -23,6 +85,45 @@
             <a href="{% url 'products' %}">Clear filters</a>
         </p>
     {% endif %}
+
+    <form method="get" class="product-filter">
+        {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
+        {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}">{% endif %}
+
+        <div class="product-filter__head">
+            <h2 class="product-filter__title">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16M7 12h10M10 19h4"/></svg>
+                Refine results
+            </h2>
+            {% if query or selected_category or company or min_price or max_price or min_antiquity or max_antiquity %}<a class="product-filter__clear" href="{% url 'products' %}">Reset all</a>{% endif %}
+        </div>
+
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label for="company" class="form-label">Company or brand</label>
+                <input type="text" id="company" name="company" value="{{ company }}" class="form-control" placeholder="e.g. Nike">
+            </div>
+            <div class="col-md-2">
+                <label for="min_price" class="form-label">Minimum price</label>
+                <input type="number" id="min_price" name="min_price" value="{{ min_price }}" min="0" step="0.01" class="form-control" placeholder="₹ 0">
+            </div>
+            <div class="col-md-2">
+                <label for="max_price" class="form-label">Maximum price</label>
+                <input type="number" id="max_price" name="max_price" value="{{ max_price }}" min="0" step="0.01" class="form-control" placeholder="Any price">
+            </div>
+            <div class="col-md-2">
+                <label for="min_antiquity" class="form-label">Minimum age</label>
+                <input type="number" id="min_antiquity" name="min_antiquity" value="{{ min_antiquity }}" min="0" class="form-control" placeholder="0 years">
+            </div>
+            <div class="col-md-2">
+                <label for="max_antiquity" class="form-label">Maximum age</label>
+                <input type="number" id="max_antiquity" name="max_antiquity" value="{{ max_antiquity }}" min="0" class="form-control" placeholder="Any age">
+            </div>
+            <div class="col-md-1">
+                <button type="submit" class="product-filter__button btn btn-primary w-100">Apply</button>
+            </div>
+        </div>
+    </form>
 
     <!-- Categories -->
     <div class="d-flex flex-wrap gap-2 justify-content-center mb-5">
@@ -69,10 +170,14 @@
                     {{ product.condition }}
                 </p>
 
-                <p class="mb-2">
+                <p class="mb-1">
                     <strong>Location:</strong>
                     {{ product.location }}
                 </p>
+
+                {% if product.company %}
+                    <p class="mb-2"><strong>Company:</strong> {{ product.company }}</p>
+                {% endif %}
 
                 <h5 class="text-primary">₹{{ product.price }}</h5>
 

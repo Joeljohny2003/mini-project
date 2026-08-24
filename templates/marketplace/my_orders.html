@@ -89,6 +89,18 @@
 
                 <hr>
 
+                <h5 class="mb-3">Items in this order</h5>
+                {% for item in order.items.all %}
+                    <div class="d-flex justify-content-between border-bottom py-2">
+                        <span>{{ item.product_name }} <small class="text-muted">× {{ item.quantity }}</small></span>
+                        <strong>₹{{ item.price }}</strong>
+                    </div>
+                {% empty %}
+                    <p class="text-muted">Item details are unavailable for this order.</p>
+                {% endfor %}
+
+                <hr>
+
 
                 <!-- ORDER INFORMATION -->
 
