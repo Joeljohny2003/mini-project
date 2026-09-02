@@ -3,3 +3,5 @@ ldap3>=2.9,<3.0
 Pillow>=12.0,<13.0
 python-dotenv>=1.2,<2.0
 razorpay>=2.0,<3.0
+imagehash>=4.3,<5.0
+numpy>=2.0,<3.0

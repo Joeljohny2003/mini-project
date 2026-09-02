@@ -50,6 +50,34 @@ class Product(models.Model):
         null=True
     )
 
+    image2 = models.ImageField(
+        upload_to="products/",
+        blank=True,
+        null=True,
+        help_text="Additional product photo 2"
+    )
+
+    image3 = models.ImageField(
+        upload_to="products/",
+        blank=True,
+        null=True,
+        help_text="Additional product photo 3"
+    )
+
+    serial_number = models.CharField(
+        max_length=150,
+        blank=True,
+        default="",
+        help_text="Serial or model number of the product"
+    )
+
+    purchase_proof = models.ImageField(
+        upload_to="products/purchase_proof/",
+        blank=True,
+        null=True,
+        help_text="Upload purchase bill, invoice, or receipt as proof of ownership"
+    )
+
     available = models.BooleanField(default=True)
 
     created_at = models.DateTimeField(auto_now_add=True)

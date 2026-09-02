@@ -170,6 +170,13 @@
                     {{ product.condition }}
                 </p>
 
+                {% if product.antiquity %}
+                    <p class="mb-1">
+                        <strong>Age:</strong>
+                        {{ product.antiquity }} {% if product.antiquity == 1 %}year{% else %}years{% endif %}
+                    </p>
+                {% endif %}
+
                 <p class="mb-1">
                     <strong>Location:</strong>
                     {{ product.location }}

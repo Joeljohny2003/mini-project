@@ -18,6 +18,10 @@ class ProductForm(forms.ModelForm):
             'condition',
             'location',
             'image',
+            'image2',
+            'image3',
+            'serial_number',
+            'purchase_proof',
         ]
 
         widgets = {
@@ -62,6 +66,23 @@ class ProductForm(forms.ModelForm):
             }),
 
             'image': forms.ClearableFileInput(attrs={
+                'class': 'form-control'
+            }),
+
+            'image2': forms.ClearableFileInput(attrs={
+                'class': 'form-control'
+            }),
+
+            'image3': forms.ClearableFileInput(attrs={
+                'class': 'form-control'
+            }),
+
+            'serial_number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g. IMEI, model number, serial ID'
+            }),
+
+            'purchase_proof': forms.ClearableFileInput(attrs={
                 'class': 'form-control'
             }),
         }

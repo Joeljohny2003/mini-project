@@ -23,6 +23,40 @@
     }
     .chat-message.mine { background: #eef2ff; }
     .chat-message small { color: #64748b; }
+
+    .product-gallery {
+        display: flex;
+        gap: 10px;
+        margin-top: 12px;
+    }
+
+    .product-gallery img {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 8px;
+        border: 2px solid #e2e8f0;
+        cursor: pointer;
+        transition: border-color 0.2s;
+    }
+
+    .product-gallery img:hover {
+        border-color: #16a34a;
+    }
+
+    .verification-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        color: #15803d;
+        padding: 6px 12px;
+        border-radius: 6px;
+        font-size: 13px;
+        font-weight: 600;
+        margin-top: 8px;
+    }
 </style>
 
 <div class="container py-5">
@@ -36,6 +70,24 @@
                 <img src="{{ product.image.url }}"
                      class="img-fluid rounded"
                      alt="{{ product.name }}">
+
+                {% if product.image2 or product.image3 %}
+                    <div class="product-gallery">
+                        <img src="{{ product.image.url }}"
+                             alt="{{ product.name }} photo 1"
+                             onclick="this.parentElement.previousElementSibling.src=this.src">
+                        {% if product.image2 %}
+                            <img src="{{ product.image2.url }}"
+                                 alt="{{ product.name }} photo 2"
+                                 onclick="this.parentElement.previousElementSibling.src=this.src">
+                        {% endif %}
+                        {% if product.image3 %}
+                            <img src="{{ product.image3.url }}"
+                                 alt="{{ product.name }} photo 3"
+                                 onclick="this.parentElement.previousElementSibling.src=this.src">
+                        {% endif %}
+                    </div>
+                {% endif %}
             {% else %}
                 <div class="border rounded p-5 text-center">
                     <h4>No Image Available</h4>
@@ -67,6 +119,11 @@
             </p>
 
             <p>
+                <strong>Age:</strong>
+                {{ product.antiquity }} {% if product.antiquity == 1 %}year{% else %}years{% endif %}
+            </p>
+
+            <p>
                 <strong>Location:</strong>
                 {{ product.location }}
             </p>
@@ -75,6 +132,19 @@
                 <strong>Description:</strong>
                 {{ product.description }}
             </p>
+
+            {% if product.serial_number %}
+                <p>
+                    <strong>Serial / Model No:</strong>
+                    {{ product.serial_number }}
+                </p>
+            {% endif %}
+
+            {% if product.purchase_proof %}
+                <div class="verification-badge">
+                    ✓ Verified Purchase
+                </div>
+            {% endif %}
 
             {% if product.available %}
                 <p class="text-success">
@@ -98,53 +168,59 @@
                 Back to Products
             </a>
 
-            {% if user.is_authenticated and product.seller and user != product.seller %}
-                <div class="chat-box">
-                    <h3 class="h5">Chat with the seller</h3>
-                    <div class="chat-messages">
-                        {% for chat_message in chat_messages %}
-                            <div class="chat-message {% if chat_message.sender == user %}mine{% endif %}">
-                                <small>{{ chat_message.sender.username }} · {{ chat_message.created_at|date:"M d, H:i" }}</small>
-                                <div>{{ chat_message.message }}</div>
-                            </div>
-                        {% empty %}
-                            <p class="text-muted mb-0">Ask about the price, condition, or delivery.</p>
-                        {% endfor %}
-                    </div>
-                    <form method="post" action="{% url 'product_chat' product.id %}">
-                        {% csrf_token %}
-                        <div class="input-group">
-                            <input type="text" name="message" class="form-control" maxlength="1000" placeholder="Ask the seller something..." required>
-                            <button type="submit" class="btn btn-primary">Send</button>
+            {% if product.seller %}
+                {% if user.is_authenticated and user != product.seller %}
+                    <div class="chat-box">
+                        <h3 class="h5">Chat with {{ product.seller.username }}</h3>
+                        <div class="chat-messages">
+                            {% for chat_message in chat_messages %}
+                                <div class="chat-message {% if chat_message.sender == user %}mine{% endif %}">
+                                    <small>{{ chat_message.sender.username }} · {{ chat_message.created_at|date:"M d, H:i" }}</small>
+                                    <div>{{ chat_message.message }}</div>
+                                </div>
+                            {% empty %}
+                                <p class="text-muted mb-0">Ask about the price, condition, or delivery.</p>
+                            {% endfor %}
                         </div>
-                    </form>
-                </div>
-            {% elif user.is_authenticated and product.seller and user == product.seller and chat_messages %}
-                <div class="chat-box">
-                    <h3 class="h5">Buyer messages</h3>
-                    <div class="chat-messages">
-                        {% for chat_message in chat_messages %}
-                            <div class="chat-message {% if chat_message.sender == user %}mine{% endif %}">
-                                <small>{{ chat_message.sender.username }} · {{ chat_message.created_at|date:"M d, H:i" }}</small>
-                                <div>{{ chat_message.message }}</div>
+                        <form method="post" action="{% url 'product_chat' product.id %}">
+                            {% csrf_token %}
+                            <div class="input-group">
+                                <input type="text" name="message" class="form-control" maxlength="1000" placeholder="Ask {{ product.seller.username }} something..." required>
+                                <button type="submit" class="btn btn-primary">Send</button>
                             </div>
-                        {% endfor %}
+                        </form>
                     </div>
-                    <form method="post" action="{% url 'product_chat' product.id %}">
-                        {% csrf_token %}
-                        <input type="hidden" name="buyer_id" value="{{ chat_messages.0.buyer_id }}">
-                        <div class="input-group">
-                            <input type="text" name="message" class="form-control" maxlength="1000" placeholder="Reply to the buyer..." required>
-                            <button type="submit" class="btn btn-primary">Reply</button>
-                        </div>
-                    </form>
-                </div>
-            {% elif not user.is_authenticated and product.seller %}
-                <div class="chat-box">
-                    <h3 class="h5">Chat with the seller</h3>
-                    <p class="text-muted mb-3">Log in to discuss the price, condition, or delivery with the seller.</p>
-                    <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-primary">Log in to chat</a>
-                </div>
+                {% elif user.is_authenticated and user == product.seller %}
+                    <div class="chat-box">
+                        <h3 class="h5">Buyer messages for {{ product.name }}</h3>
+                        {% if chat_messages %}
+                            <div class="chat-messages">
+                                {% for chat_message in chat_messages %}
+                                    <div class="chat-message {% if chat_message.sender == user %}mine{% endif %}">
+                                        <small>{{ chat_message.sender.username }} · {{ chat_message.created_at|date:"M d, H:i" }}</small>
+                                        <div>{{ chat_message.message }}</div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <form method="post" action="{% url 'product_chat' product.id %}">
+                                {% csrf_token %}
+                                <input type="hidden" name="buyer_id" value="{{ chat_messages.0.buyer_id }}">
+                                <div class="input-group">
+                                    <input type="text" name="message" class="form-control" maxlength="1000" placeholder="Reply to the buyer..." required>
+                                    <button type="submit" class="btn btn-primary">Reply</button>
+                                </div>
+                            </form>
+                        {% else %}
+                            <p class="text-muted mb-0">No buyer messages yet. Buyers will be able to reach you here.</p>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <div class="chat-box">
+                        <h3 class="h5">Ask the seller about this product</h3>
+                        <p class="text-muted mb-3">Log in to ask {{ product.seller.username }} about the price, condition, or delivery.</p>
+                        <a href="{% url 'login' %}?next={{ request.path }}" class="btn btn-primary">Log in to ask the seller</a>
+                    </div>
+                {% endif %}
             {% endif %}
 
         </div>

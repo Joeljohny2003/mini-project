@@ -114,6 +114,31 @@
         margin-top: 20px;
     }
 
+    .section-divider {
+        margin: 30px 0 25px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e2e8f0;
+    }
+
+    .section-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 5px;
+    }
+
+    .section-subtitle {
+        color: #64748b;
+        font-size: 14px;
+        margin-bottom: 20px;
+    }
+
+    .field-hint {
+        color: #94a3b8;
+        font-size: 13px;
+        margin-top: 5px;
+    }
+
     @media (max-width: 768px) {
         .sell-page {
             padding: 30px 15px;
@@ -184,6 +209,39 @@
 
             <div class="image-field">
                 {{ form.image }}
+            </div>
+
+            <div class="section-divider">
+                <h2 class="section-title">Additional Photos</h2>
+                <p class="section-subtitle">Upload more photos to help buyers see the product from different angles.</p>
+            </div>
+
+            {{ form.image2.label_tag }}
+
+            <div class="image-field">
+                {{ form.image2 }}
+            </div>
+
+            {{ form.image3.label_tag }}
+
+            <div class="image-field">
+                {{ form.image3 }}
+            </div>
+
+            <div class="section-divider">
+                <h2 class="section-title">Verification Details</h2>
+                <p class="section-subtitle">Provide proof of ownership to build buyer trust.</p>
+            </div>
+
+            {{ form.serial_number.label_tag }}
+            {{ form.serial_number }}
+            <p class="field-hint">Enter the product's serial number, model number, or IMEI (if applicable).</p>
+
+            {{ form.purchase_proof.label_tag }}
+            <p class="field-hint">Upload a photo of the purchase bill, invoice, or receipt.</p>
+
+            <div class="image-field">
+                {{ form.purchase_proof }}
             </div>
 
             <button type="submit" class="sell-button">

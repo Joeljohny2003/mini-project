@@ -53,4 +53,6 @@ urlpatterns = [
         views.payment_success,
         name='payment_success'
     ),
+
+    path('visual-search/', views.visual_search, name='visual_search'),
 ]

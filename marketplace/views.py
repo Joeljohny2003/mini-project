@@ -10,6 +10,7 @@ import razorpay
 from .models import Product, Cart, CartItem, Order, OrderItem, Category, ChatMessage, DeliveryPerson
 from .forms import ProductForm
 from .forms import CheckoutForm, DeliveryRegistrationForm
+from .visual_search import find_similar_products
 
 # Create your views here.
 
@@ -100,15 +101,6 @@ def product_details(request, product_id):
             category=product.category,
         ).exclude(id=product.id).order_by('-created_at')[:4]
     )
-
-    if len(similar_products) < 4:
-        similar_ids = [similar_product.id for similar_product in similar_products]
-        similar_products.extend(
-            Product.objects.filter(available=True)
-            .exclude(id=product.id)
-            .exclude(id__in=similar_ids)
-            .order_by('-created_at')[:4 - len(similar_products)]
-        )
 
     messages = ChatMessage.objects.none()
     if request.user.is_authenticated and product.seller:
@@ -627,5 +619,49 @@ def seller_dashboard(request):
             'total_listings': total_listings,
             'active_listings': active_listings,
             'sold_listings': sold_listings,
+        }
+    )
+
+
+def visual_search(request):
+    if not request.user.is_authenticated:
+        return redirect('login')
+    if DeliveryPerson.objects.filter(user=request.user, is_active=True).exists():
+        return redirect('delivery_dashboard')
+
+    results = []
+    uploaded_image_url = None
+    error = None
+
+    if request.method == 'POST' and request.FILES.get('search_image'):
+        search_image = request.FILES['search_image']
+
+        allowed_types = ['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+        if search_image.content_type not in allowed_types:
+            error = 'Please upload a valid image file (JPEG, PNG, WebP, or GIF).'
+        elif search_image.size > 10 * 1024 * 1024:
+            error = 'Image file must be under 10 MB.'
+        else:
+            try:
+                import base64
+                search_image.seek(0)
+                uploaded_image_url = (
+                    'data:' + search_image.content_type + ';base64,'
+                    + base64.b64encode(search_image.read()).decode()
+                )
+                search_image.seek(0)
+                results = find_similar_products(search_image, top_n=8)
+            except Exception as e:
+                import traceback
+                traceback.print_exc()
+                error = 'Something went wrong while analysing the image. Please try another.'
+
+    return render(
+        request,
+        'marketplace/visual_search.html',
+        {
+            'results': results,
+            'uploaded_image_url': uploaded_image_url,
+            'error': error,
         }
     )

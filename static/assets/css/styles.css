@@ -854,7 +854,7 @@ input, select, textarea { font: inherit; color: inherit; }
   font-family: var(--ff-display);
   font-weight: 800; font-size: 24px;
   letter-spacing: -0.02em;
-  color: var(--paper);
+  color: var(--indigo);
   margin-bottom: var(--s4);
 }
 .footer-brand p { color: rgba(255,255,255,0.7); max-width: 32ch; line-height: 1.6; font-size: var(--text-sm); }

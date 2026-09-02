@@ -1,0 +1,357 @@
+{% extends 'marketplace/base.html' %}
+
+{% block content %}
+
+<style>
+    .vs-page {
+        min-height: calc(100vh - 100px);
+        background: #f7f8fa;
+        padding: 50px 20px 80px;
+    }
+
+    .vs-card {
+        max-width: 800px;
+        margin: 0 auto;
+        background: #fff;
+        padding: 45px 50px;
+        border-radius: 14px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    }
+
+    .vs-title {
+        text-align: center;
+        font-size: 32px;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 6px;
+    }
+
+    .vs-subtitle {
+        text-align: center;
+        color: #64748b;
+        font-size: 15px;
+        margin-bottom: 32px;
+    }
+
+    .upload-zone {
+        border: 2px dashed #cbd5e1;
+        border-radius: 12px;
+        padding: 50px 30px;
+        text-align: center;
+        cursor: pointer;
+        transition: border-color 0.2s, background 0.2s;
+        background: #fafbfc;
+        position: relative;
+    }
+
+    .upload-zone:hover,
+    .upload-zone.dragover {
+        border-color: #6366f1;
+        background: #eef2ff;
+    }
+
+    .upload-zone input[type="file"] {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .upload-icon {
+        font-size: 48px;
+        margin-bottom: 12px;
+        display: block;
+    }
+
+    .upload-text {
+        font-size: 16px;
+        color: #475569;
+        font-weight: 600;
+    }
+
+    .upload-hint {
+        font-size: 13px;
+        color: #94a3b8;
+        margin-top: 6px;
+    }
+
+    .preview-wrap {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        margin: 25px 0;
+        padding: 20px;
+        background: #f8fafc;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .preview-wrap img {
+        width: 140px;
+        height: 140px;
+        object-fit: cover;
+        border-radius: 10px;
+        border: 2px solid #e2e8f0;
+    }
+
+    .preview-info {
+        flex: 1;
+    }
+
+    .preview-info p {
+        margin: 0 0 4px;
+        color: #475569;
+        font-size: 14px;
+    }
+
+    .preview-info strong {
+        color: #111827;
+    }
+
+    .search-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 12px;
+        padding: 12px 28px;
+        border: none;
+        border-radius: 8px;
+        background: #6366f1;
+        color: #fff;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+
+    .search-btn:hover {
+        background: #4f46e5;
+    }
+
+    .search-btn svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .error-box {
+        background: #fff1f2;
+        border: 1px solid #fecdd3;
+        color: #be123c;
+        padding: 12px 15px;
+        border-radius: 7px;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+
+    .results-section {
+        margin-top: 40px;
+    }
+
+    .results-header {
+        font-size: 20px;
+        font-weight: 700;
+        color: #111827;
+        margin-bottom: 6px;
+    }
+
+    .results-sub {
+        color: #64748b;
+        font-size: 14px;
+        margin-bottom: 22px;
+    }
+
+    .results-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 20px;
+    }
+
+    .result-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        overflow: hidden;
+        transition: box-shadow 0.2s, transform 0.15s;
+    }
+
+    .result-card:hover {
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+        transform: translateY(-2px);
+    }
+
+    .result-card img {
+        width: 100%;
+        height: 190px;
+        object-fit: cover;
+        display: block;
+    }
+
+    .result-card-body {
+        padding: 14px 16px;
+    }
+
+    .result-card-body h3 {
+        font-size: 15px;
+        font-weight: 600;
+        color: #111827;
+        margin: 0 0 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .result-card-body .price {
+        color: #6366f1;
+        font-weight: 700;
+        font-size: 16px;
+        margin-bottom: 8px;
+    }
+
+    .match-badge {
+        display: inline-block;
+        background: #f0fdf4;
+        border: 1px solid #bbf7d0;
+        color: #15803d;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .no-results {
+        text-align: center;
+        padding: 40px 20px;
+        color: #64748b;
+    }
+
+    .no-results .big-icon {
+        font-size: 48px;
+        margin-bottom: 12px;
+        display: block;
+    }
+
+    @media (max-width: 768px) {
+        .vs-page { padding: 24px 12px 60px; }
+        .vs-card { padding: 28px 18px; }
+        .vs-title { font-size: 26px; }
+        .upload-zone { padding: 30px 20px; }
+        .preview-wrap { flex-direction: column; text-align: center; }
+        .preview-wrap img { width: 120px; height: 120px; }
+        .results-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
+    }
+</style>
+
+<div class="vs-page">
+    <div class="vs-card">
+
+        <h1 class="vs-title">AI Visual Search</h1>
+        <p class="vs-subtitle">Upload a photo of a product you're looking for and find visually similar items in our store.</p>
+
+        {% if error %}
+            <div class="error-box">{{ error }}</div>
+        {% endif %}
+
+        <form method="POST" enctype="multipart/form-data" id="vs-form">
+            {% csrf_token %}
+
+            <div class="upload-zone" id="upload-zone">
+                <input type="file" name="search_image" accept="image/*" id="file-input">
+                <span class="upload-icon">📷</span>
+                <p class="upload-text">Click or drag an image here</p>
+                <p class="upload-hint">Supports JPEG, PNG, WebP, GIF · Max 10 MB</p>
+            </div>
+
+            <div class="preview-wrap" id="preview-wrap" style="display:none;">
+                <img id="preview-img" src="" alt="Uploaded preview">
+                <div class="preview-info">
+                    <p><strong id="file-name"></strong></p>
+                    <p id="file-size"></p>
+                    <button type="submit" class="search-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+                        Search Similar Products
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        {% if results %}
+            <div class="results-section">
+                <p class="results-header">Found {{ results.length|default:results|length }} similar product{{ results|length|pluralize }}</p>
+                <p class="results-sub">Sorted by visual similarity — combination of pattern matching and colour analysis.</p>
+
+                <div class="results-grid">
+                    {% for item in results %}
+                        <a href="{% url 'product_details' item.product.id %}" class="result-card" style="text-decoration:none; color:inherit;">
+                            {% if item.product.image %}
+                                <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}">
+                            {% else %}
+                                <div style="height:190px; background:#f1f5f9; display:flex; align-items:center; justify-content:center; color:#94a3b8;">No Image</div>
+                            {% endif %}
+                            <div class="result-card-body">
+                                <h3>{{ item.product.name }}</h3>
+                                <p class="price">₹{{ item.product.price }}</p>
+                                <span class="match-badge">{{ item.score }}% match</span>
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+            </div>
+        {% elif uploaded_image_url and not results and not error %}
+            <div class="no-results">
+                <span class="big-icon">🔍</span>
+                <h3>No similar products found</h3>
+                <p>Try uploading a different image or browse our <a href="{% url 'products' %}">full catalogue</a>.</p>
+            </div>
+        {% endif %}
+
+    </div>
+</div>
+
+<script>
+(function () {
+    const zone = document.getElementById('upload-zone');
+    const input = document.getElementById('file-input');
+    const wrap = document.getElementById('preview-wrap');
+    const img  = document.getElementById('preview-img');
+    const nameEl  = document.getElementById('file-name');
+    const sizeEl  = document.getElementById('file-size');
+    const form = document.getElementById('vs-form');
+
+    function showPreview(file) {
+        if (!file || !file.type.startsWith('image/')) return;
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            img.src = e.target.result;
+            nameEl.textContent = file.name;
+            sizeEl.textContent = (file.size / 1024).toFixed(1) + ' KB';
+            wrap.style.display = 'flex';
+            zone.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+    }
+
+    input.addEventListener('change', function () {
+        if (this.files[0]) showPreview(this.files[0]);
+    });
+
+    zone.addEventListener('dragover', function (e) {
+        e.preventDefault();
+        zone.classList.add('dragover');
+    });
+
+    zone.addEventListener('dragleave', function () {
+        zone.classList.remove('dragover');
+    });
+
+    zone.addEventListener('drop', function (e) {
+        e.preventDefault();
+        zone.classList.remove('dragover');
+        if (e.dataTransfer.files[0]) {
+            input.files = e.dataTransfer.files;
+            showPreview(e.dataTransfer.files[0]);
+        }
+    });
+})();
+</script>
+
+{% endblock %}
