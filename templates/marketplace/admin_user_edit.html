@@ -1,0 +1,162 @@
+{% extends 'marketplace/base.html' %}
+
+{% block content %}
+
+<style>
+    .admin-wrap { background: #f6f7fb; min-height: 80vh; }
+    .admin-sidebar {
+        background: #0f172a; color: #cbd5e1; min-height: 80vh; padding: 28px 20px;
+    }
+    .admin-sidebar .brand-box {
+        display: flex; align-items: center; gap: 10px; color: #fff;
+        font-weight: 800; font-size: 18px; margin-bottom: 30px; padding: 0 8px;
+    }
+    .admin-sidebar .brand-mark-sm {
+        width: 34px; height: 34px; border-radius: 9px;
+        background: linear-gradient(135deg, #4f46e5, #4338ca);
+        display: grid; place-items: center; font-weight: 800; color: #fff;
+    }
+    .admin-sidebar .nav-link-admin {
+        display: flex; align-items: center; gap: 12px; color: #cbd5e1;
+        text-decoration: none; padding: 11px 14px; border-radius: 9px;
+        font-weight: 600; font-size: 14px; margin-bottom: 4px;
+        transition: background 150ms ease, color 150ms ease;
+    }
+    .admin-sidebar .nav-link-admin:hover { background: rgba(255,255,255,0.06); color: #fff; }
+    .admin-sidebar .nav-link-admin.active { background: linear-gradient(135deg,#4f46e5,#4338ca); color:#fff; }
+    .admin-sidebar .side-label {
+        font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+        color: #64748b; font-weight: 700; margin: 22px 8px 8px;
+    }
+    .admin-sidebar .side-logout { margin-top: 26px; }
+    .admin-sidebar .side-logout .nav-link-admin { color: #f87171; }
+    .admin-content { padding: 34px 30px; }
+    .admin-content h1 { font-size: 26px; font-weight: 800; margin-bottom: 2px; }
+    .admin-content .sub { color: #64748b; margin-bottom: 20px; }
+    @media (max-width: 992px) { .admin-sidebar { min-height: auto; } }
+</style>
+
+<div class="admin-wrap">
+    <div class="container-fluid p-0">
+        <div class="row g-0">
+
+            <div class="col-lg-2 d-none d-lg-block">
+                <aside class="admin-sidebar">
+                    <div class="brand-box"><span class="brand-mark-sm">T</span> Admin Panel</div>
+                    <div class="side-label">Overview</div>
+                    <a href="{% url 'admin_dashboard' %}" class="nav-link-admin">📊 Dashboard</a>
+                    <div class="side-label">Management</div>
+                    <a href="{% url 'admin_products' %}" class="nav-link-admin">🛍️ Products</a>
+                    <a href="{% url 'admin_orders' %}" class="nav-link-admin">📦 Orders</a>
+                    <a href="{% url 'admin_users' %}" class="nav-link-admin active">👥 Users</a>
+                    <a href="{% url 'admin_categories' %}" class="nav-link-admin">🏷️ Categories</a>
+                    <a href="{% url 'admin_delivery' %}" class="nav-link-admin">🚚 Delivery</a>
+                    <div class="side-logout"><a href="{% url 'logout' %}" class="nav-link-admin">⏻ Log out</a></div>
+                </aside>
+            </div>
+
+            <div class="col-lg-10">
+                <div class="admin-content">
+
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h1>Edit User</h1>
+                            <p class="sub mb-0">Update profile details for "{{ user_being_edited.username }}".</p>
+                        </div>
+                        <a href="{% url 'admin_users' %}" class="btn btn-outline-secondary">← Back to Users</a>
+                    </div>
+
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags|default:'info' }} py-2">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <div class="row g-4">
+                        <div class="col-md-8">
+                            <div class="card shadow-sm border-0 p-4">
+                                <form method="post">
+                                    {% csrf_token %}
+
+                                    {% if form.non_field_errors %}
+                                        <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                                    {% endif %}
+
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-semibold" for="{{ form.username.id_for_label }}">Username</label>
+                                            {{ form.username }}
+                                            {% for e in form.username.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-semibold" for="{{ form.email.id_for_label }}">Email</label>
+                                            {{ form.email }}
+                                            {% for e in form.email.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-semibold" for="{{ form.first_name.id_for_label }}">First Name</label>
+                                            {{ form.first_name }}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label fw-semibold" for="{{ form.last_name.id_for_label }}">Last Name</label>
+                                            {{ form.last_name }}
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label fw-semibold" for="{{ form.new_password.id_for_label }}">{{ form.new_password.label }}</label>
+                                            {{ form.new_password }}
+                                            {% for e in form.new_password.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}
+                                        </div>
+                                    </div>
+
+                                    <h6 class="fw-bold mt-4 mb-2">Account Status</h6>
+                                    <div class="form-check form-switch">
+                                        {{ form.is_active }}
+                                        <label class="form-check-label" for="{{ form.is_active.id_for_label }}">Active</label>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        {{ form.is_staff }}
+                                        <label class="form-check-label" for="{{ form.is_staff.id_for_label }}">Staff (can access Admin Panel)</label>
+                                    </div>
+                                    <div class="form-check form-switch">
+                                        {{ form.is_superuser }}
+                                        <label class="form-check-label" for="{{ form.is_superuser.id_for_label }}">Superuser (full access)</label>
+                                    </div>
+
+                                    <div class="d-flex gap-2 mt-4">
+                                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                                        <a href="{% url 'admin_users' %}" class="btn btn-outline-secondary">Cancel</a>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="card shadow-sm border-0 p-4">
+                                <h6 class="fw-bold mb-3">User Info</h6>
+                                <p class="mb-1"><strong>Username:</strong> {{ user_being_edited.username }}</p>
+                                <p class="mb-1"><strong>Joined:</strong> {{ user_being_edited.date_joined|date:"d M Y" }}</p>
+
+                                {% if delivery_info %}
+                                    <hr>
+                                    <h6 class="fw-bold">Delivery Person</h6>
+                                    <p class="mb-1"><strong>Phone:</strong> {{ delivery_info.phone }}</p>
+                                    <p class="mb-0">
+                                        {% if delivery_info.is_active %}
+                                            <span class="badge text-bg-success">Active</span>
+                                        {% else %}
+                                            <span class="badge text-bg-secondary">Inactive</span>
+                                        {% endif %}
+                                    </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}

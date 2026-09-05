@@ -1,0 +1,145 @@
+{% extends 'marketplace/base.html' %}
+
+{% block content %}
+
+<style>
+    .admin-wrap { background: #f6f7fb; min-height: 80vh; }
+    .admin-sidebar {
+        background: #0f172a; color: #cbd5e1; min-height: 80vh; padding: 28px 20px;
+    }
+    .admin-sidebar .brand-box {
+        display: flex; align-items: center; gap: 10px; color: #fff;
+        font-weight: 800; font-size: 18px; margin-bottom: 30px; padding: 0 8px;
+    }
+    .admin-sidebar .brand-mark-sm {
+        width: 34px; height: 34px; border-radius: 9px;
+        background: linear-gradient(135deg, #4f46e5, #4338ca);
+        display: grid; place-items: center; font-weight: 800; color: #fff;
+    }
+    .admin-sidebar .nav-link-admin {
+        display: flex; align-items: center; gap: 12px; color: #cbd5e1;
+        text-decoration: none; padding: 11px 14px; border-radius: 9px;
+        font-weight: 600; font-size: 14px; margin-bottom: 4px;
+        transition: background 150ms ease, color 150ms ease;
+    }
+    .admin-sidebar .nav-link-admin:hover { background: rgba(255,255,255,0.06); color: #fff; }
+    .admin-sidebar .nav-link-admin.active { background: linear-gradient(135deg,#4f46e5,#4338ca); color:#fff; }
+    .admin-sidebar .side-label {
+        font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+        color: #64748b; font-weight: 700; margin: 22px 8px 8px;
+    }
+    .admin-sidebar .side-logout { margin-top: 26px; }
+    .admin-sidebar .side-logout .nav-link-admin { color: #f87171; }
+    .admin-content { padding: 34px 30px; }
+    .admin-content h1 { font-size: 26px; font-weight: 800; margin-bottom: 2px; }
+    .admin-content .sub { color: #64748b; margin-bottom: 20px; }
+    .table-admin { background: #fff; border-radius: 12px; border: 1px solid #eef0f5; overflow: hidden; }
+    .table-admin thead th {
+        background: #f8fafc; color: #475569; font-size: 12px; text-transform: uppercase;
+        letter-spacing: 0.6px; padding: 12px 14px; border-bottom: 1px solid #eef0f5;
+    }
+    .table-admin tbody td {
+        padding: 12px 14px; vertical-align: middle; border-bottom: 1px solid #f4f5f9; font-size: 14px;
+    }
+    .table-admin tbody tr:hover { background: #fafbfe; }
+    .badge-soft { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; }
+    .btn-xs { padding: 4px 10px; font-size: 12px; border-radius: 6px; }
+    .avatar-circle {
+        width: 40px; height: 40px; border-radius: 50%;
+        display: grid; place-items: center; font-weight: 700; color: #fff; flex-shrink: 0;
+    }
+    @media (max-width: 992px) { .admin-sidebar { min-height: auto; } }
+</style>
+
+<div class="admin-wrap">
+    <div class="container-fluid p-0">
+        <div class="row g-0">
+
+            <div class="col-lg-2 d-none d-lg-block">
+                <aside class="admin-sidebar">
+                    <div class="brand-box"><span class="brand-mark-sm">T</span> Admin Panel</div>
+                    <div class="side-label">Overview</div>
+                    <a href="{% url 'admin_dashboard' %}" class="nav-link-admin">📊 Dashboard</a>
+                    <div class="side-label">Management</div>
+                    <a href="{% url 'admin_products' %}" class="nav-link-admin">🛍️ Products</a>
+                    <a href="{% url 'admin_orders' %}" class="nav-link-admin">📦 Orders</a>
+                    <a href="{% url 'admin_users' %}" class="nav-link-admin">👥 Users</a>
+                    <a href="{% url 'admin_categories' %}" class="nav-link-admin">🏷️ Categories</a>
+                    <a href="{% url 'admin_delivery' %}" class="nav-link-admin active">🚚 Delivery</a>
+                    <div class="side-logout"><a href="{% url 'logout' %}" class="nav-link-admin">⏻ Log out</a></div>
+                </aside>
+            </div>
+
+            <div class="col-lg-10">
+                <div class="admin-content">
+
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags|default:'info' }} py-2">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <h1>Delivery Personnel</h1>
+                    <p class="sub">Oversee the delivery team and their performance.</p>
+
+                    <div class="table-admin table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Person</th>
+                                    <th>Phone</th>
+                                    <th>Total Deliveries</th>
+                                    <th>Delivered</th>
+                                    <th>Active Assignments</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in delivery_data %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="avatar-circle" style="background:linear-gradient(135deg,#38bdf8,#0284c7);">
+                                                    {{ row.person.user.username|slice:":1"|upper }}
+                                                </div>
+                                                <div class="fw-bold">{{ row.person.user.username }}</div>
+                                            </div>
+                                        </td>
+                                        <td>{{ row.person.phone }}</td>
+                                        <td>{{ row.deliveries_count }}</td>
+                                        <td>{{ row.delivered_count }}</td>
+                                        <td>{{ row.active_assignments }}</td>
+                                        <td>
+                                            {% if row.person.is_active %}
+                                                <span class="badge-soft text-success" style="background:#e7f8ee;">Active</span>
+                                            {% else %}
+                                                <span class="badge-soft text-secondary" style="background:#eff1f4;">Inactive</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <form method="post" action="{% url 'admin_delivery_toggle' row.person.id %}">
+                                                {% csrf_token %}
+                                                {% if row.person.is_active %}
+                                                    <button class="btn btn-outline-warning btn-xs">Deactivate</button>
+                                                {% else %}
+                                                    <button class="btn btn-outline-success btn-xs">Activate</button>
+                                                {% endif %}
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr><td colspan="7" class="text-center text-muted py-4">No delivery personnel yet.</td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -181,3 +181,65 @@ class DeliveryRegistrationForm(forms.Form):
         if User.objects.filter(username=cleaned_data.get('username')).exists():
             raise forms.ValidationError('That username is already in use.')
         return cleaned_data
+
+
+class AdminUserEditForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = [
+            'username',
+            'first_name',
+            'last_name',
+            'email',
+            'is_active',
+            'is_staff',
+            'is_superuser',
+        ]
+
+        widgets = {
+            'username': forms.TextInput(attrs={
+                'class': 'form-control',
+            }),
+            'first_name': forms.TextInput(attrs={
+                'class': 'form-control',
+            }),
+            'last_name': forms.TextInput(attrs={
+                'class': 'form-control',
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input',
+            }),
+            'is_staff': forms.CheckboxInput(attrs={
+                'class': 'form-check-input',
+            }),
+            'is_superuser': forms.CheckboxInput(attrs={
+                'class': 'form-check-input',
+            }),
+        }
+
+    new_password = forms.CharField(
+        required=False,
+        label='New password (optional)',
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Leave blank to keep current password'
+        })
+    )
+
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if User.objects.filter(username=username).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError('That username is already in use.')
+        return username
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        new_password = self.cleaned_data.get('new_password')
+        if new_password:
+            user.set_password(new_password)
+        if commit:
+            user.save()
+        return user

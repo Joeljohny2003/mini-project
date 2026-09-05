@@ -1,0 +1,132 @@
+{% extends 'marketplace/base.html' %}
+
+{% block content %}
+
+<style>
+    .admin-wrap { background: #f6f7fb; min-height: 80vh; }
+    .admin-sidebar {
+        background: #0f172a; color: #cbd5e1; min-height: 80vh; padding: 28px 20px;
+    }
+    .admin-sidebar .brand-box {
+        display: flex; align-items: center; gap: 10px; color: #fff;
+        font-weight: 800; font-size: 18px; margin-bottom: 30px; padding: 0 8px;
+    }
+    .admin-sidebar .brand-mark-sm {
+        width: 34px; height: 34px; border-radius: 9px;
+        background: linear-gradient(135deg, #4f46e5, #4338ca);
+        display: grid; place-items: center; font-weight: 800; color: #fff;
+    }
+    .admin-sidebar .nav-link-admin {
+        display: flex; align-items: center; gap: 12px; color: #cbd5e1;
+        text-decoration: none; padding: 11px 14px; border-radius: 9px;
+        font-weight: 600; font-size: 14px; margin-bottom: 4px;
+        transition: background 150ms ease, color 150ms ease;
+    }
+    .admin-sidebar .nav-link-admin:hover { background: rgba(255,255,255,0.06); color: #fff; }
+    .admin-sidebar .nav-link-admin.active { background: linear-gradient(135deg,#4f46e5,#4338ca); color:#fff; }
+    .admin-sidebar .side-label {
+        font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+        color: #64748b; font-weight: 700; margin: 22px 8px 8px;
+    }
+    .admin-sidebar .side-logout { margin-top: 26px; }
+    .admin-sidebar .side-logout .nav-link-admin { color: #f87171; }
+    .admin-content { padding: 34px 30px; }
+    .admin-content h1 { font-size: 26px; font-weight: 800; margin-bottom: 2px; }
+    .admin-content .sub { color: #64748b; margin-bottom: 20px; }
+    .table-admin { background: #fff; border-radius: 12px; border: 1px solid #eef0f5; overflow: hidden; }
+    .table-admin thead th {
+        background: #f8fafc; color: #475569; font-size: 12px; text-transform: uppercase;
+        letter-spacing: 0.6px; padding: 12px 14px; border-bottom: 1px solid #eef0f5;
+    }
+    .table-admin tbody td {
+        padding: 12px 14px; vertical-align: middle; border-bottom: 1px solid #f4f5f9; font-size: 14px;
+    }
+    .table-admin tbody tr:hover { background: #fafbfe; }
+    .badge-soft { font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; }
+    .btn-xs { padding: 4px 10px; font-size: 12px; border-radius: 6px; }
+    @media (max-width: 992px) { .admin-sidebar { min-height: auto; } }
+</style>
+
+<div class="admin-wrap">
+    <div class="container-fluid p-0">
+        <div class="row g-0">
+
+            <div class="col-lg-2 d-none d-lg-block">
+                <aside class="admin-sidebar">
+                    <div class="brand-box"><span class="brand-mark-sm">T</span> Admin Panel</div>
+                    <div class="side-label">Overview</div>
+                    <a href="{% url 'admin_dashboard' %}" class="nav-link-admin">📊 Dashboard</a>
+                    <div class="side-label">Management</div>
+                    <a href="{% url 'admin_products' %}" class="nav-link-admin">🛍️ Products</a>
+                    <a href="{% url 'admin_orders' %}" class="nav-link-admin">📦 Orders</a>
+                    <a href="{% url 'admin_users' %}" class="nav-link-admin">👥 Users</a>
+                    <a href="{% url 'admin_categories' %}" class="nav-link-admin active">🏷️ Categories</a>
+                    <a href="{% url 'admin_delivery' %}" class="nav-link-admin">🚚 Delivery</a>
+                    <div class="side-logout"><a href="{% url 'logout' %}" class="nav-link-admin">⏻ Log out</a></div>
+                </aside>
+            </div>
+
+            <div class="col-lg-10">
+                <div class="admin-content">
+
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags|default:'info' }} py-2">{{ message }}</div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <h1>Category Management</h1>
+                    <p class="sub">Add new categories or remove unused ones.</p>
+
+                    <div class="row g-4">
+                        <div class="col-md-4">
+                            <div class="card shadow-sm border-0 p-4">
+                                <h5 class="fw-bold mb-3">Add Category</h5>
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <label class="form-label">Category Name</label>
+                                    <input type="text" name="name" class="form-control mb-3" placeholder="e.g. Electronics" required>
+                                    <button class="btn btn-primary w-100">+ Add Category</button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="col-md-8">
+                            <div class="table-admin table-responsive">
+                                <table class="table align-middle mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Category</th>
+                                            <th>Products</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for category in categories %}
+                                            <tr>
+                                                <td class="fw-bold">🏷️ {{ category.name }}</td>
+                                                <td>{{ category.product_count }}</td>
+                                                <td>
+                                                    <form method="post" action="{% url 'admin_category_delete' category.id %}" onsubmit="return confirm('Delete this category?');">
+                                                        {% csrf_token %}
+                                                        <button class="btn btn-outline-danger btn-xs">🗑️ Delete</button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        {% empty %}
+                                            <tr><td colspan="3" class="text-center text-muted py-4">No categories yet.</td></tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}

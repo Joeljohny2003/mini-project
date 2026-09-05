@@ -231,6 +231,11 @@ class Order(models.Model):
         default="Pending"
     )
 
+    visible_to_user = models.BooleanField(
+        default=True,
+        help_text="Whether the order is still visible in the customer's My Orders list"
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

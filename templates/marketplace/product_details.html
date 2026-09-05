@@ -146,22 +146,16 @@
                 </div>
             {% endif %}
 
-            {% if product.available %}
-                <p class="text-success">
-                    ✓ Available
-                </p>
-            {% else %}
-                <p class="text-danger">
-                    ✗ Sold / Unavailable
-                </p>
-            {% endif %}
-
-           <a href="{% url 'add_to_cart' product.id %}"
-              class="btn btn-primary">
-              🛒 Add to Cart
-            </a>
-
-            
+           {% if user.is_authenticated and product.seller and user == product.seller %}
+               <span class="btn btn-secondary disabled">
+                   🚫 Your own listing — you cannot buy this
+               </span>
+           {% else %}
+               <a href="{% url 'add_to_cart' product.id %}"
+                  class="btn btn-primary">
+                  🛒 Add to Cart
+                </a>
+           {% endif %}
 
             <a href="{% url 'products' %}"
                class="btn btn-outline-secondary">

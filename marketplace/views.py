@@ -3,13 +3,15 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.conf import settings
-from django.db.models import Q
+from django.db.models import Q, Count, Sum
 from functools import wraps
+from decimal import Decimal
 import razorpay
 from .models import Product, Cart, CartItem, Order, OrderItem, Category, ChatMessage, DeliveryPerson
 from .forms import ProductForm
-from .forms import CheckoutForm, DeliveryRegistrationForm
+from .forms import CheckoutForm, DeliveryRegistrationForm, AdminUserEditForm
 from .visual_search import find_similar_products
 
 # Create your views here.
@@ -20,6 +22,8 @@ def customer_required(view):
     def wrapped(request, *args, **kwargs):
         if not request.user.is_authenticated:
             return redirect('login')
+        if request.user.is_staff or request.user.is_superuser:
+            return redirect('admin_dashboard')
         if DeliveryPerson.objects.filter(user=request.user, is_active=True).exists():
             return redirect('delivery_dashboard')
         return view(request, *args, **kwargs)
@@ -178,6 +182,10 @@ def user_login(request):
             password=password
         )
 
+        if user is not None and (user.is_staff or user.is_superuser):
+            login(request, user)
+            return redirect('admin_dashboard')
+
         if user is not None and not DeliveryPerson.objects.filter(user=user).exists():
             login(request, user)
             return redirect('home')
@@ -320,6 +328,11 @@ def add_to_cart(request, product_id):
 
     product = get_object_or_404(Product, id=product_id, available=True)
 
+    if product.seller:
+        if product.seller_id == request.user.id:
+            messages.error(request, 'You cannot buy or add your own listing to the cart.')
+            return redirect('product_details', product_id=product.id)
+
     cart, created = Cart.objects.get_or_create(
         user=request.user
     )
@@ -346,7 +359,11 @@ def cart(request):
         user=request.user
     )
 
-    cart_items = cart.items.select_related('product').filter(product__available=True)
+    cart_items = cart.items.select_related('product').filter(
+        product__available=True
+    ).exclude(
+        product__seller=request.user
+    )
 
     total = sum(
         item.total_price()
@@ -374,7 +391,11 @@ def checkout(request):
         user=request.user
     )
 
-    cart_items = cart.items.select_related('product').filter(product__available=True)
+    cart_items = cart.items.select_related('product').filter(
+        product__available=True
+    ).exclude(
+        product__seller=request.user
+    )
 
     if not cart_items.exists():
         return redirect('cart')
@@ -572,14 +593,48 @@ def order_success(request, order_id):
 @customer_required
 def my_orders(request):
     orders = Order.objects.filter(
-        user=request.user
+        user=request.user,
+        visible_to_user=True
+    ).order_by('-created_at')
+
+    hidden_orders = Order.objects.filter(
+        user=request.user,
+        visible_to_user=False
     ).order_by('-created_at')
 
     return render(
         request,
         'marketplace/my_orders.html',
-        {'orders': orders}
+        {'orders': orders, 'hidden_orders': hidden_orders}
     )
+
+
+@customer_required
+def remove_order(request, order_id):
+    if request.method == 'POST':
+        order = get_object_or_404(
+            Order,
+            id=order_id,
+            user=request.user
+        )
+        order.visible_to_user = False
+        order.save(update_fields=['visible_to_user'])
+
+    return redirect('my_orders')
+
+
+@customer_required
+def restore_order(request, order_id):
+    if request.method == 'POST':
+        order = get_object_or_404(
+            Order,
+            id=order_id,
+            user=request.user
+        )
+        order.visible_to_user = True
+        order.save(update_fields=['visible_to_user'])
+
+    return redirect('my_orders')
 
 @customer_required
 def my_listings(request):
@@ -593,6 +648,37 @@ def my_listings(request):
         'marketplace/my_listings.html',
         {'products': products}
     )
+
+
+@customer_required
+def unlist_product(request, product_id):
+    if request.method == 'POST':
+        product = get_object_or_404(
+            Product,
+            id=product_id,
+            seller=request.user
+        )
+        product.available = not product.available
+        product.save(update_fields=['available'])
+        state = 'unlisted' if not product.available else 're-listed'
+        messages.success(request, f'Product "{product.name}" {state}.')
+    return redirect('my_listings')
+
+
+@customer_required
+def remove_product(request, product_id):
+    if request.method == 'POST':
+        product = get_object_or_404(
+            Product,
+            id=product_id,
+            seller=request.user
+        )
+        name = product.name
+        if CartItem.objects.filter(product=product).exists():
+            CartItem.objects.filter(product=product).delete()
+        product.delete()
+        messages.success(request, f'Listing "{name}" removed.')
+    return redirect('my_listings')
 
 @customer_required
 def seller_dashboard(request):
@@ -665,3 +751,363 @@ def visual_search(request):
             'error': error,
         }
     )
+
+
+# ---------------------------------------------------------------
+# ADMIN MODULE
+# ---------------------------------------------------------------
+
+def admin_required(view):
+    @wraps(view)
+    def wrapped(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('admin_login')
+        if not (request.user.is_staff or request.user.is_superuser):
+            messages.error(request, 'You do not have admin access.')
+            return redirect('admin_login')
+        return view(request, *args, **kwargs)
+    return wrapped
+
+
+def admin_login(request):
+    if request.user.is_authenticated and (request.user.is_staff or request.user.is_superuser):
+        return redirect('admin_dashboard')
+
+    if request.method == 'POST':
+        username = request.POST.get('username', '')
+        password = request.POST.get('password', '')
+        user = authenticate(request, username=username, password=password)
+
+        if user is not None and (user.is_staff or user.is_superuser):
+            login(request, user)
+            return redirect('admin_dashboard')
+
+        error = 'Invalid admin credentials. Admin accounts are marked as staff.'
+        return render(request, 'marketplace/admin_login.html', {'error': error})
+
+    return render(request, 'marketplace/admin_login.html')
+
+
+@admin_required
+def admin_dashboard(request):
+
+    total_products = Product.objects.count()
+    available_products = Product.objects.filter(available=True).count()
+    sold_products = Product.objects.filter(available=False).count()
+    total_users = User.objects.filter(is_staff=False).count()
+
+    total_orders = Order.objects.count()
+    pending_orders = Order.objects.filter(status='Pending').count()
+    confirmed_orders = Order.objects.filter(status='Confirmed').count()
+    shipped_orders = Order.objects.filter(status='Shipped').count()
+    delivered_orders = Order.objects.filter(status='Delivered').count()
+    cancelled_orders = Order.objects.filter(status='Cancelled').count()
+
+    total_revenue = Order.objects.filter(
+        status__in=['Confirmed', 'Shipped', 'Delivered'],
+        payment_status='Paid'
+    ).aggregate(total=Sum('total_amount'))['total'] or Decimal('0.00')
+
+    pending_products = Product.objects.filter(available=True).order_by('-created_at')[:8]
+    recent_orders = Order.objects.select_related('user').order_by('-created_at')[:8]
+    recent_users = User.objects.filter(is_staff=False).order_by('-date_joined')[:8]
+    recent_deliveries = DeliveryPerson.objects.select_related('user')[:8]
+
+    return render(
+        request,
+        'marketplace/admin_dashboard.html',
+        {
+            'total_products': total_products,
+            'available_products': available_products,
+            'sold_products': sold_products,
+            'total_users': total_users,
+            'total_orders': total_orders,
+            'pending_orders': pending_orders,
+            'confirmed_orders': confirmed_orders,
+            'shipped_orders': shipped_orders,
+            'delivered_orders': delivered_orders,
+            'cancelled_orders': cancelled_orders,
+            'total_revenue': total_revenue,
+            'pending_products': pending_products,
+            'recent_orders': recent_orders,
+            'recent_users': recent_users,
+            'recent_deliveries': recent_deliveries,
+        }
+    )
+
+
+@admin_required
+def admin_products(request):
+    products = Product.objects.select_related('seller', 'category').order_by('-created_at')
+
+    query = request.GET.get('q', '').strip()
+    status = request.GET.get('status', '').strip()
+    category_id = request.GET.get('category', '').strip()
+
+    if query:
+        products = products.filter(
+            Q(name__icontains=query) | Q(company__icontains=query) | Q(seller__username__icontains=query)
+        )
+    if status:
+        if status == 'available':
+            products = products.filter(available=True)
+        elif status == 'sold':
+            products = products.filter(available=False)
+    if category_id:
+        products = products.filter(category_id=category_id)
+
+    categories = Category.objects.all()
+
+    return render(
+        request,
+        'marketplace/admin_products.html',
+        {
+            'products': products,
+            'categories': categories,
+            'query': query,
+            'status': status,
+            'selected_category': category_id,
+        }
+    )
+
+
+@admin_required
+def admin_product_edit(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+
+    if request.method == 'POST':
+        form = ProductForm(request.POST, request.FILES, instance=product)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Product "{product.name}" updated successfully.')
+            return redirect('admin_products')
+    else:
+        form = ProductForm(instance=product)
+
+    categories = Category.objects.all()
+    return render(
+        request,
+        'marketplace/admin_product_edit.html',
+        {
+            'form': form,
+            'product': product,
+            'categories': categories,
+        }
+    )
+
+
+@admin_required
+def admin_product_delete(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    if request.method == 'POST':
+        name = product.name
+        product.delete()
+        messages.success(request, f'Product "{name}" deleted successfully.')
+    return redirect('admin_products')
+
+
+@admin_required
+def admin_product_toggle(request, product_id):
+    product = get_object_or_404(Product, id=product_id)
+    if request.method == 'POST':
+        product.available = not product.available
+        product.save(update_fields=['available'])
+        state = 'activated' if product.available else 'deactivated'
+        messages.success(request, f'Product "{product.name}" {state}.')
+    return redirect('admin_products')
+
+
+@admin_required
+def admin_orders(request):
+    orders = Order.objects.select_related('user', 'delivery_person').order_by('-created_at')
+
+    query = request.GET.get('q', '').strip()
+    status_filter = request.GET.get('status', '').strip()
+    payment_filter = request.GET.get('payment', '').strip()
+
+    if query:
+        orders = orders.filter(
+            Q(id__icontains=query)
+            | Q(full_name__icontains=query)
+            | Q(user__username__icontains=query)
+            | Q(phone__icontains=query)
+        )
+    if status_filter:
+        orders = orders.filter(status=status_filter)
+    if payment_filter:
+        orders = orders.filter(payment_status=payment_filter)
+
+    return render(
+        request,
+        'marketplace/admin_orders.html',
+        {
+            'orders': orders,
+            'query': query,
+            'status_filter': status_filter,
+            'payment_filter': payment_filter,
+            'STATUS_CHOICES': Order.STATUS_CHOICES,
+            'payment_choices': ['Pending', 'Paid', 'Failed'],
+        }
+    )
+
+
+@admin_required
+def admin_order_status(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+    if request.method == 'POST':
+        new_status = request.POST.get('status', '').strip()
+        if new_status in [choice[0] for choice in Order.STATUS_CHOICES]:
+            order.status = new_status
+            order.save(update_fields=['status'])
+            messages.success(request, f'Order #{order.id} marked as {new_status}.')
+    return redirect('admin_orders')
+
+
+@admin_required
+def admin_users(request):
+    users = User.objects.filter(is_staff=False).order_by('-date_joined')
+
+    query = request.GET.get('q', '').strip()
+    if query:
+        users = users.filter(
+            Q(username__icontains=query)
+            | Q(email__icontains=query)
+            | Q(first_name__icontains=query)
+            | Q(last_name__icontains=query)
+        )
+
+    user_data = []
+    for user in users:
+        user_data.append({
+            'user': user,
+            'listings_count': user.products_for_sale.count(),
+            'orders_count': Order.objects.filter(user=user).count(),
+            'is_delivery': DeliveryPerson.objects.filter(user=user).exists(),
+        })
+
+    return render(
+        request,
+        'marketplace/admin_users.html',
+        {
+            'user_data': user_data,
+            'query': query,
+        }
+    )
+
+
+@admin_required
+def admin_user_toggle(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    if request.method == 'POST':
+        user.is_active = not user.is_active
+        user.save(update_fields=['is_active'])
+        state = 'activated' if user.is_active else 'deactivated'
+        messages.success(request, f'User "{user.username}" {state}.')
+    return redirect('admin_users')
+
+
+@admin_required
+def admin_user_delete(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    if request.method == 'POST' and not user.is_superuser:
+        username = user.username
+        user.delete()
+        messages.success(request, f'User "{username}" deleted.')
+    return redirect('admin_users')
+
+
+@admin_required
+def admin_user_edit(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+
+    if request.method == 'POST':
+        form = AdminUserEditForm(request.POST, instance=user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'User "{user.username}" updated successfully.')
+            return redirect('admin_users')
+    else:
+        form = AdminUserEditForm(instance=user)
+
+    delivery_info = None
+    if DeliveryPerson.objects.filter(user=user).exists():
+        delivery_info = DeliveryPerson.objects.get(user=user)
+
+    return render(
+        request,
+        'marketplace/admin_user_edit.html',
+        {
+            'form': form,
+            'user_being_edited': user,
+            'delivery_info': delivery_info,
+        }
+    )
+
+
+@admin_required
+def admin_categories(request):
+    categories = Category.objects.annotate(
+        product_count=Count('product')
+    ).order_by('name')
+
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        if name and not Category.objects.filter(name__iexact=name).exists():
+            Category.objects.create(name=name)
+            messages.success(request, f'Category "{name}" added.')
+        elif name:
+            messages.error(request, f'Category "{name}" already exists.')
+        return redirect('admin_categories')
+
+    return render(
+        request,
+        'marketplace/admin_categories.html',
+        {'categories': categories}
+    )
+
+
+@admin_required
+def admin_category_delete(request, category_id):
+    category = get_object_or_404(Category, id=category_id)
+    if request.method == 'POST':
+        name = category.name
+        if Product.objects.filter(category=category).exists():
+            messages.error(request, f'Cannot delete "{name}" because it has products assigned.')
+        else:
+            category.delete()
+            messages.success(request, f'Category "{name}" deleted.')
+    return redirect('admin_categories')
+
+
+@admin_required
+def admin_delivery(request):
+    delivery_people = DeliveryPerson.objects.select_related('user').all()
+
+    delivery_data = []
+    for person in delivery_people:
+        delivery_data.append({
+            'person': person,
+            'deliveries_count': Order.objects.filter(delivery_person=person).count(),
+            'delivered_count': Order.objects.filter(delivery_person=person, status='Delivered').count(),
+            'active_assignments': Order.objects.filter(
+                delivery_person=person,
+                status__in=['Confirmed', 'Shipped']
+            ).count(),
+        })
+
+    return render(
+        request,
+        'marketplace/admin_delivery.html',
+        {'delivery_data': delivery_data}
+    )
+
+
+@admin_required
+def admin_delivery_toggle(request, delivery_id):
+    person = get_object_or_404(DeliveryPerson, id=delivery_id)
+    if request.method == 'POST':
+        person.is_active = not person.is_active
+        person.save(update_fields=['is_active'])
+        state = 'activated' if person.is_active else 'deactivated'
+        messages.success(request, f'Delivery person "{person.user.username}" {state}.')
+    return redirect('admin_delivery')

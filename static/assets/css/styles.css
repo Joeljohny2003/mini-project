@@ -291,8 +291,20 @@ input, select, textarea { font: inherit; color: inherit; }
   font-family: var(--ff-mono); font-size: var(--text-xs);
   letter-spacing: 0.04em;
   color: var(--fg-mute);
+  white-space: nowrap;
 }
 .nav-cta strong { color: var(--rose); font-weight: 700; }
+.admin-nav-btn {
+  display: inline-flex; align-items: center; gap: var(--s2);
+  background: var(--indigo);
+  color: var(--paper);
+  padding: 10px 20px;
+  border-radius: var(--r-sm);
+  font-weight: 600; font-size: var(--text-sm);
+  text-decoration: none;
+  transition: background 180ms var(--ease);
+}
+.admin-nav-btn:hover { background: var(--indigo-deep); color: var(--paper); }
 .nav-toggle {
   display: none; padding: 8px;
   font-size: 22px; color: var(--ink);
@@ -1539,6 +1551,7 @@ main > section.container {
   .nav-bar .container { gap: var(--s4); height: 56px; overflow-x: auto; }
   .main-nav { display: none; }
   .nav-toggle { display: block; }
+  .admin-nav-btn { display: none; }
   .nav-cta { display: none; }
   .utility .links { display: none; }
   .icon-btn--user .user-name { display: none; }
